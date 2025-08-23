@@ -398,196 +398,6 @@ export default function HistoryPage() {
     })
   }
 
-  const testReceiptDisplay = () => {
-    // Create a test bill for demonstration
-    const testBill = {
-      bill_no: 'TEST001',
-      created_at: new Date().toISOString(),
-      customer_name: 'Test Customer',
-      items: [
-        { product_name: 'Test Product 1', quantity: 2, price: 100, subtotal: 200 },
-        { product_name: 'Test Product 2', quantity: 1, price: 150, subtotal: 150 }
-      ],
-      total_price: 350
-    }
-    
-    // Populate the receipt element with test data
-    populateReceiptElement(testBill)
-    
-    const receiptElement = document.getElementById('receipt-print-history')
-    if (receiptElement) {
-      receiptElement.classList.remove('hidden')
-      receiptElement.style.position = 'fixed'
-      receiptElement.style.top = '50px'
-      receiptElement.style.left = '50px'
-      receiptElement.style.zIndex = '9999'
-      receiptElement.style.visibility = 'visible'
-      receiptElement.style.backgroundColor = 'white'
-      receiptElement.style.border = '2px solid black'
-      receiptElement.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)'
-      console.log('Test receipt element shown')
-      
-      // Hide after 5 seconds
-      setTimeout(() => {
-        receiptElement.classList.add('hidden')
-        receiptElement.style.position = 'fixed'
-        receiptElement.style.top = '0'
-        receiptElement.style.left = '0'
-        receiptElement.style.zIndex = '-1'
-        receiptElement.style.visibility = 'hidden'
-        receiptElement.style.border = 'none'
-        receiptElement.style.boxShadow = 'none'
-        console.log('Test receipt element hidden again')
-      }, 5000)
-    } else {
-      console.error('Test receipt element not found')
-    }
-  }
-
-  const testPDFGeneration = async () => {
-    try {
-      console.log('Testing PDF generation...')
-      
-      // Create a test bill for demonstration
-      const testBill = {
-        bill_no: 'TEST001',
-        created_at: new Date().toISOString(),
-        customer_name: 'Test Customer',
-        items: [
-          { product_name: 'Test Product 1', quantity: 2, price: 100, subtotal: 200 },
-          { product_name: 'Test Product 2', quantity: 1, price: 150, subtotal: 150 }
-        ],
-        total_price: 350
-      }
-      
-      // Try html2canvas method first
-      try {
-        console.log('Attempting html2canvas method...')
-        
-        // Generate PDF using the test receipt element
-        const receiptElement = document.getElementById('receipt-print-history')
-        if (!receiptElement) {
-          console.error('Test receipt element not found')
-          return
-        }
-        
-        // First, populate the receipt element with test data
-        populateReceiptElement(testBill)
-        
-        // Temporarily show the test receipt element with proper positioning
-        receiptElement.classList.remove('hidden')
-        receiptElement.style.position = 'absolute'
-        receiptElement.style.top = '0'
-        receiptElement.style.left = '0'
-        receiptElement.style.zIndex = '9999'
-        receiptElement.style.visibility = 'visible'
-        receiptElement.style.backgroundColor = 'white'
-        receiptElement.style.width = '220px'
-        receiptElement.style.height = 'auto'
-        receiptElement.style.overflow = 'visible'
-        
-        // Force a reflow to ensure the element is properly rendered
-        receiptElement.offsetHeight
-        
-        // Wait for rendering and ensure content is visible
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        console.log('Receipt element dimensions:', {
-          offsetWidth: receiptElement.offsetWidth,
-          offsetHeight: receiptElement.offsetHeight,
-          scrollWidth: receiptElement.scrollWidth,
-          scrollHeight: receiptElement.scrollHeight,
-          clientWidth: receiptElement.clientWidth,
-          clientHeight: receiptElement.clientHeight
-        })
-        
-        // Check if content is actually visible
-        const contentCheck = receiptElement.innerHTML
-        console.log('Receipt content length:', contentCheck.length)
-        console.log('Receipt content preview:', contentCheck.substring(0, 200))
-        
-        console.log('Generating PDF from test receipt...')
-        const canvas = await html2canvas(receiptElement, {
-          width: 220,
-          height: receiptElement.scrollHeight,
-          scale: 1, // Use scale 1 for better compatibility
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          allowTaint: true,
-          foreignObjectRendering: true,
-          logging: true,
-          removeContainer: false,
-          ignoreElements: (element) => {
-            // Don't ignore any elements
-            return false
-          }
-        })
-        
-        // Hide the element again
-        receiptElement.classList.add('hidden')
-        receiptElement.style.position = 'fixed'
-        receiptElement.style.zIndex = '-1'
-        receiptElement.style.visibility = 'hidden'
-        
-        console.log('Canvas generated:', { 
-          width: canvas.width, 
-          height: canvas.height,
-          dataURL: canvas.toDataURL().substring(0, 100) + '...'
-        })
-        
-        // Create PDF
-        const imgData = canvas.toDataURL('image/png', 1.0)
-        console.log('Image data generated, length:', imgData.length)
-        
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: [58, receiptElement.scrollHeight * 0.264583]
-        })
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, 58, receiptElement.scrollHeight * 0.264583)
-        
-        // Download the test PDF
-        const pdfBlob = pdf.output('blob')
-        const url = URL.createObjectURL(pdfBlob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = 'test_receipt_html2canvas.pdf'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-        
-        console.log('html2canvas PDF generated and downloaded successfully!')
-        alert('html2canvas PDF generated successfully! Check your downloads folder.')
-        
-      } catch (html2canvasError) {
-        console.log('html2canvas failed, trying direct method:', html2canvasError)
-        
-        // Fallback to direct PDF generation
-        const pdf = generateDirectPDF(testBill)
-        
-        // Download the direct PDF
-        const pdfBlob = pdf.output('blob')
-        const url = URL.createObjectURL(pdfBlob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = 'test_receipt_direct.pdf'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-        
-        console.log('Direct PDF generated and downloaded successfully!')
-        alert('Direct PDF generated successfully! Check your downloads folder.')
-      }
-      
-    } catch (error) {
-      console.error('Error testing PDF generation:', error)
-      alert('Error testing PDF generation: ' + error.message)
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-64">
@@ -614,85 +424,106 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6 pb-24">
       {/* Page Title */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Bill History</h1>
-        <p className="text-gray-600">Device ID: {deviceId}</p>
-        <div className="mt-4 space-x-2">
-          <button
-            onClick={testReceiptDisplay}
-            className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-          >
-            Test Receipt Display
-          </button>
-          <button
-            onClick={testPDFGeneration}
-            className="px-4 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-          >
-            Test PDF Generation
-          </button>
-        </div>
+      <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-6 sm:py-8 rounded-lg shadow-lg mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-4xl font-bold mb-2">Bill History</h1>
+        <p className="text-blue-100 text-sm sm:text-lg">View and manage all your bills</p>
       </div>
 
       {/* Bills List */}
       {bills.length === 0 ? (
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Bills Found</h2>
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">No Bills Found</h2>
           <p className="text-gray-600 mb-6">You haven't created any bills yet.</p>
-          <a href="/" className="btn-primary">
+          <a href="/" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
             Create Your First Bill
           </a>
         </div>
       ) : (
         <div className="space-y-4">
           {bills.map((bill) => (
-            <div key={bill.id} className="card hover:shadow-md transition-shadow cursor-pointer" onClick={() => viewBillDetails(bill.id)}>
-              <div className="flex justify-between items-center">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="text-lg font-semibold text-primary-600">#{bill.bill_no}</span>
-                    <span className="text-sm text-gray-500">{formatDate(bill.created_at)}</span>
+            <div key={bill.id} className="card bg-white shadow-lg border-0 rounded-xl hover:shadow-xl transition-all duration-200 cursor-pointer" onClick={() => viewBillDetails(bill.id)}>
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                        #{bill.bill_no}
+                      </span>
+                      <span className="text-sm text-gray-500">{formatDate(bill.created_at)}</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+                      {bill.customer_name || 'No Customer Name'}
+                    </h3>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <span className="flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
+                      </span>
+                      {bill.pdf_url && (
+                        <span className="flex items-center text-green-600">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          PDF Available
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-gray-900 font-medium">{bill.customer_name || 'No Customer Name'}</p>
-                  <p className="text-sm text-gray-600">
-                    {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
-                  </p>
-                  {bill.pdf_url && (
-                    <p className="text-xs text-green-600">✓ PDF Available</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
-                  <div className="flex space-x-2 mt-2">
-                    {bill.pdf_url ? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
+                    </div>
+                    <div className="flex space-x-2">
+                      {bill.pdf_url ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            downloadStoredPDF(bill.pdf_url, bill)
+                          }}
+                          className="inline-flex items-center px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Download
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            downloadPDF(bill)
+                          }}
+                          className="inline-flex items-center px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Generate PDF
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          downloadStoredPDF(bill.pdf_url, bill)
+                          printReceipt(bill)
                         }}
-                        className="btn-primary text-sm"
+                        className="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200"
                       >
-                        Download PDF
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print
                       </button>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          downloadPDF(bill)
-                        }}
-                        className="btn-secondary text-sm"
-                      >
-                        Generate PDF
-                      </button>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        printReceipt(bill)
-                      }}
-                      className="btn-secondary text-sm"
-                    >
-                      Reprint
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
