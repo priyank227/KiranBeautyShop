@@ -586,17 +586,11 @@ export default function HomePage() {
         return
       }
       
-      // Temporarily show the receipt element for printing
-      receiptElement.classList.remove('hidden')
-      receiptElement.style.position = 'static'
-      receiptElement.style.zIndex = '9999'
-      receiptElement.style.visibility = 'visible'
-      receiptElement.style.backgroundColor = 'white'
-      receiptElement.style.width = '58mm'
-      receiptElement.style.height = 'auto'
-      receiptElement.style.overflow = 'visible'
-      receiptElement.style.margin = '0'
-      receiptElement.style.padding = '2mm'
+      // Show the receipt element for printing using the show class
+      receiptElement.classList.add('show')
+      
+      // Force a reflow to ensure the element is properly rendered
+      receiptElement.offsetHeight
       
       // Wait a bit for the element to render
       setTimeout(() => {
@@ -605,14 +599,9 @@ export default function HomePage() {
         
         // Hide the element again after printing
         setTimeout(() => {
-          receiptElement.classList.add('hidden')
-          receiptElement.style.position = 'fixed'
-          receiptElement.style.zIndex = '-1'
-          receiptElement.style.visibility = 'hidden'
-          receiptElement.style.margin = ''
-          receiptElement.style.padding = ''
+          receiptElement.classList.remove('show')
         }, 1000)
-      }, 300)
+      }, 500)
       
     } catch (error) {
       console.error('Error printing receipt:', error)

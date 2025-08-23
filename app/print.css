@@ -1,88 +1,82 @@
 /* Print styles for receipt */
 @media print {
   body {
-    width: 58mm;
-    font-size: 12px;
-    margin: 0;
-    padding: 0;
-    background: white;
+    width: 58mm !important;
+    font-size: 12px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    line-height: 1.2 !important;
   }
-  
-  .no-print {
-    display: none !important;
+
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
   }
-  
+
+  /* Show only receipt area */
   #receipt-print,
   #receipt-print-history {
-    display: block !important;
-    position: static !important;
+    visibility: visible !important;
+    position: relative !important;
     width: 58mm !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 2mm !important;
     background: white !important;
-    z-index: auto !important;
+    color: black !important;
     border: none !important;
     box-shadow: none !important;
+    overflow: visible !important;
   }
-  
-  /* Ensure table borders print */
+
+  /* Ensure children inside receipt are visible */
+  #receipt-print * ,
+  #receipt-print-history * {
+    visibility: visible !important;
+    color: black !important;
+    background: transparent !important;
+  }
+
+  /* Table styles */
   table {
-    border-collapse: collapse;
-    width: 100%;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 11px !important;
   }
-  
+
   th, td {
-    border: 1px solid black;
-    padding: 1mm;
-    text-align: left;
+    border: 1px solid black !important;
+    padding: 1mm !important;
+    text-align: left !important;
   }
-  
+
   th {
+    font-weight: bold !important;
     background-color: #f3f4f6 !important;
-    font-weight: bold;
   }
-  
-  /* Hide all other elements when printing */
-  *:not(#receipt-print):not(#receipt-print-history) {
-    display: none !important;
+
+  /* Headings */
+  h1, h2, h3 {
+    font-size: 14px !important;
+    margin: 2mm 0 !important;
+    font-weight: bold !important;
   }
-  
-  /* Ensure proper spacing */
-  h1 {
-    margin: 0 0 2mm 0 !important;
-    font-size: 16px !important;
-  }
-  
-  p {
+
+  p, span, div {
+    font-size: 12px !important;
     margin: 1mm 0 !important;
   }
-  
-  /* Force page break after receipt */
+
+  /* Page break */
   #receipt-print,
   #receipt-print-history {
-    page-break-after: always;
+    page-break-after: always !important;
+  }
+
+  /* Exact print color */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
-
-/* Mobile-specific styles for bottom navigation */
-@media (max-width: 640px) {
-  .main-content {
-    padding-bottom: 5rem !important;
-  }
-  
-  /* Ensure bottom nav is always visible on mobile */
-  .bottom-nav-link {
-    min-height: 4rem;
-  }
-  
-  /* Improve touch targets */
-  .bottom-nav-link svg {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-  
-  .bottom-nav-link span {
-    font-size: 0.75rem;
-    line-height: 1;
-  }
-} 
