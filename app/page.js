@@ -19,6 +19,10 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showProductModal, setShowProductModal] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState([])
+  const [editingItem, setEditingItem] = useState(null)
+  const [editProductName, setEditProductName] = useState('')
+  const [editQuantity, setEditQuantity] = useState(1)
+  const [editPrice, setEditPrice] = useState('')
 
   useEffect(() => {
     // Generate or retrieve device ID
@@ -59,26 +63,66 @@ export default function HomePage() {
 
   const addToCart = () => {
     if (!selectedProduct || !price || quantity <= 0) {
-      alert('Please fill all fields correctly')
+      alert('Please fill in all fields correctly')
       return
     }
 
     const newItem = {
       product_name: selectedProduct,
-      quantity: parseInt(quantity),
+      quantity: quantity,
       price: parseFloat(price),
-      subtotal: parseFloat(price) * parseInt(quantity)
+      subtotal: quantity * parseFloat(price)
     }
 
     setCartItems([...cartItems, newItem])
+    
+    // Clear the form for next item
     setSelectedProduct('')
     setQuantity(1)
     setPrice('')
-    setSearchTerm('')
   }
 
   const removeFromCart = (index) => {
-    setCartItems(cartItems.filter((_, i) => i !== index))
+    const newCart = [...cartItems]
+    newCart.splice(index, 1)
+    setCartItems(newCart)
+  }
+
+  const editCartItem = (index) => {
+    const item = cartItems[index]
+    setEditingItem(index)
+    setEditProductName(item.product_name)
+    setEditQuantity(item.quantity)
+    setEditPrice(item.price.toString())
+  }
+
+  const saveEdit = () => {
+    if (!editProductName.trim() || !editPrice || editQuantity <= 0) {
+      alert('Please fill in all fields correctly')
+      return
+    }
+
+    const newCart = [...cartItems]
+    newCart[editingItem] = {
+      ...newCart[editingItem],
+      product_name: editProductName.trim(),
+      quantity: editQuantity,
+      price: parseFloat(editPrice),
+      subtotal: editQuantity * parseFloat(editPrice)
+    }
+
+    setCartItems(newCart)
+    setEditingItem(null)
+    setEditProductName('')
+    setEditQuantity(1)
+    setEditPrice('')
+  }
+
+  const cancelEdit = () => {
+    setEditingItem(null)
+    setEditProductName('')
+    setEditQuantity(1)
+    setEditPrice('')
   }
 
   const getTotalPrice = () => {
@@ -736,31 +780,121 @@ export default function HomePage() {
             <div className="space-y-3">
               {cartItems.map((item, index) => (
                 <div key={index} className="flex justify-between items-center p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:border-blue-300 transition-all duration-200">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <span className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-semibold text-xs sm:text-sm flex-shrink-0">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <span className="font-semibold text-gray-900 text-sm sm:text-base block truncate">{item.product_name}</span>
-                        <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                          Qty: {item.quantity} × ₹{item.price.toFixed(2)}
+                  {editingItem === index ? (
+                    // Edit Mode
+                    <div className="flex-1 min-w-0">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Product Name */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-medium text-gray-700">Product</label>
+                          <input
+                            type="text"
+                            value={editProductName}
+                            onChange={(e) => setEditProductName(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                          />
+                        </div>
+                        
+                        {/* Quantity */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-medium text-gray-700">Quantity</label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="1"
+                              value={editQuantity}
+                              onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                            />
+                            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex space-x-1">
+                              <button
+                                onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
+                                className="w-4 h-4 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 flex items-center justify-center text-xs"
+                              >
+                                -
+                              </button>
+                              <button
+                                onClick={() => setEditQuantity(editQuantity + 1)}
+                                className="w-4 h-4 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 flex items-center justify-center text-xs"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Price */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-medium text-gray-700">Price (₹)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={editPrice}
+                            onChange={(e) => setEditPrice(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                            placeholder="0.00"
+                          />
                         </div>
                       </div>
+                      
+                      {/* Edit Actions */}
+                      <div className="flex space-x-2 mt-3">
+                        <button
+                          onClick={saveEdit}
+                          className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="px-3 py-1 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2 sm:space-x-4 ml-2">
-                    <span className="font-bold text-base sm:text-lg text-gray-900">₹{item.subtotal.toFixed(2)}</span>
-                    <button
-                      onClick={() => removeFromCart(index)}
-                      className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 hover:bg-red-200 rounded-lg flex items-center justify-center text-red-600 transition-colors duration-200 flex-shrink-0"
-                      title="Remove item"
-                    >
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                  ) : (
+                    // Display Mode
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                          <span className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-semibold text-xs sm:text-sm flex-shrink-0">
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <span className="font-semibold text-gray-900 text-sm sm:text-base block truncate">{item.product_name}</span>
+                            <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                              Qty: {item.quantity} × ₹{item.price.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 sm:space-x-4 ml-2">
+                        <span className="font-bold text-base sm:text-lg text-gray-900">₹{item.subtotal.toFixed(2)}</span>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => editCartItem(index)}
+                            className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 hover:bg-blue-200 rounded-lg flex items-center justify-center text-blue-600 transition-colors duration-200 flex-shrink-0"
+                            title="Edit item"
+                          >
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => removeFromCart(index)}
+                            className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 hover:bg-red-200 rounded-lg flex items-center justify-center text-red-600 transition-colors duration-200 flex-shrink-0"
+                            title="Remove item"
+                          >
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
               
