@@ -1,0 +1,88 @@
+/* Print styles for receipt */
+@media print {
+  body {
+    width: 58mm;
+    font-size: 12px;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  #receipt-print,
+  #receipt-print-history {
+    display: block !important;
+    position: static !important;
+    width: 58mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    background: white !important;
+    z-index: auto !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure table borders print */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  th, td {
+    border: 1px solid black;
+    padding: 1mm;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #f3f4f6 !important;
+    font-weight: bold;
+  }
+  
+  /* Hide all other elements when printing */
+  *:not(#receipt-print):not(#receipt-print-history) {
+    display: none !important;
+  }
+  
+  /* Ensure proper spacing */
+  h1 {
+    margin: 0 0 2mm 0 !important;
+    font-size: 16px !important;
+  }
+  
+  p {
+    margin: 1mm 0 !important;
+  }
+  
+  /* Force page break after receipt */
+  #receipt-print,
+  #receipt-print-history {
+    page-break-after: always;
+  }
+}
+
+/* Mobile-specific styles for bottom navigation */
+@media (max-width: 640px) {
+  .main-content {
+    padding-bottom: 5rem !important;
+  }
+  
+  /* Ensure bottom nav is always visible on mobile */
+  .bottom-nav-link {
+    min-height: 4rem;
+  }
+  
+  /* Improve touch targets */
+  .bottom-nav-link svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .bottom-nav-link span {
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+} 
