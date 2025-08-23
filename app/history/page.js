@@ -686,7 +686,7 @@ export default function HistoryPage() {
       {showBillDetails && selectedBill && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+            <div className="p-6 pb-[80px]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Bill Details #{selectedBill.bill_no}</h3>
                 <button
@@ -742,7 +742,7 @@ export default function HistoryPage() {
                   </div>
                 </div>
                 
-                <div className="flex space-x-3 pt-4">
+                <div className="flex space-x-3 pt-6 pb-2">
                   {selectedBill.pdf_url ? (
                     <button
                       onClick={() => downloadStoredPDF(selectedBill.pdf_url, selectedBill)}
