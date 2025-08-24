@@ -714,6 +714,8 @@ export default function HomePage() {
                 <div className="relative">
                   <input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     min="1"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
@@ -743,6 +745,8 @@ export default function HomePage() {
                 </label>
                 <input
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
                   min="0"
                   step="0.01"
                   value={price}
@@ -808,6 +812,8 @@ export default function HomePage() {
                             <div className="relative">
                               <input
                                 type="number"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 min="1"
                                 value={editQuantity}
                                 onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
@@ -835,6 +841,8 @@ export default function HomePage() {
                             <label className="block text-xs font-medium text-gray-700">Price (₹)</label>
                             <input
                               type="number"
+                              inputMode="decimal"
+                              pattern="[0-9]*[.,]?[0-9]*"
                               min="0"
                               step="0.01"
                               value={editPrice}

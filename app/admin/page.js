@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 export default function AdminPage() {
   const { username, logout } = useAuth()
   const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
@@ -82,6 +82,8 @@ export default function AdminPage() {
   }
 
   const handleAddProduct = async () => {
+    console.log('handleAddProduct called with:', newProductName)
+    
     if (!newProductName.trim()) {
       alert('Please enter a product name')
       return
@@ -89,12 +91,15 @@ export default function AdminPage() {
 
     setLoading(true)
     try {
-      await createProduct(newProductName.trim())
+      console.log('Calling createProduct with:', newProductName.trim())
+      const result = await createProduct(newProductName.trim())
+      console.log('createProduct result:', result)
+      
       setNewProductName('')
       setShowAddModal(false)
       await loadProducts()
       await loadStats()
-      alert('Product added successfully!')
+      // alert('Product added successfully!')
     } catch (error) {
       console.error('Error adding product:', error)
       alert('Error adding product. Please try again.')
@@ -103,22 +108,16 @@ export default function AdminPage() {
     }
   }
 
-  const deleteProduct = async (productId) => {
+  const handleDeleteProduct = async (productId) => {
     if (!confirm('Are you sure you want to delete this product?')) {
       return
     }
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId)
-
-      if (error) throw error
-
+      await deleteProduct(productId)
       await loadProducts()
       await loadStats()
-      alert('Product deleted successfully!')
+      // alert('Product deleted successfully!')
     } catch (error) {
       console.error('Error deleting product:', error)
       alert('Error deleting product. Please try again.')
@@ -258,7 +257,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteProduct(product.id)}
+                      onClick={() => handleDeleteProduct(product.id)}
                       className="w-8 h-8 bg-red-100 hover:bg-red-200 rounded-lg flex items-center justify-center text-red-600 transition-colors duration-200"
                       title="Delete product"
                     >
