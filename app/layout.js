@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ServiceWorkerRegistration from './sw-register'
 import BottomNav from './components/BottomNav'
 import { Inter } from 'next/font/google'
+import { AuthProvider } from './contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,8 +27,10 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#8B5CF6" />
       </head>
       <body className={inter.className}>
-        {children}
-        <BottomNav />
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   )

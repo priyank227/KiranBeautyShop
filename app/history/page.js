@@ -4,8 +4,12 @@ import { useState, useEffect } from 'react'
 import { getBills, supabase } from '../../lib/supabase'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import ProtectedRoute from '../components/ProtectedRoute'
+import BottomNav from '../components/BottomNav'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function HistoryPage() {
+  const { username, logout } = useAuth()
   const [bills, setBills] = useState([])
   const [loading, setLoading] = useState(true)
   const [dateFilter, setDateFilter] = useState('all')
@@ -624,405 +628,409 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* Page Title */}
-      <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-6 sm:py-8 rounded-lg shadow-lg mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold mb-2">Bill History</h1>
-        <p className="text-blue-100 text-sm sm:text-lg">View and manage all your bills</p>
-      </div>
+    <ProtectedRoute>
+      <div className="space-y-6 pb-24">
 
-      {/* Date Filter Section */}
-      <div className="bg-white rounded-xl shadow-lg border-0 mb-6">
-        <div className="p-4 sm:p-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Filter by Date
-          </h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Quick Date Filters */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">Quick Filters</label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setDateFilter('all')}
-                  className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    dateFilter === 'all'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  All Time
-                </button>
-                <button
-                  onClick={() => setDateFilter('today')}
-                  className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    dateFilter === 'today'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Today
-                </button>
-                <button
-                  onClick={() => setDateFilter('week')}
-                  className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    dateFilter === 'week'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  This Week
-                </button>
-                <button
-                  onClick={() => setDateFilter('month')}
-                  className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    dateFilter === 'month'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  This Month
-                </button>
-              </div>
-            </div>
+        {/* Page Title */}
+        <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-6 sm:py-8 rounded-lg shadow-lg mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2">Bill History</h1>
+          <p className="text-blue-100 text-sm sm:text-lg">View and manage all your bills</p>
+        </div>
 
-            {/* Custom Date Range */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">Custom Range</label>
-              <div className="flex space-x-2">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Start Date"
-                />
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="End Date"
-                />
-              </div>
-              <button
-                onClick={() => setDateFilter('custom')}
-                disabled={!customStartDate || !customEndDate}
-                className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  customStartDate && customEndDate
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                Apply Custom Filter
-              </button>
-            </div>
-
-            {/* Filter Summary */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">Results</label>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">{filteredBills.length}</span> bills found
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {getDateFilterLabel()}
-                </div>
-                {dateFilter !== 'all' && (
+        {/* Date Filter Section */}
+        <div className="bg-white rounded-xl shadow-lg border-0 mb-6">
+          <div className="p-4 sm:p-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+              <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Filter by Date
+            </h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Quick Date Filters */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Quick Filters</label>
+                <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={clearDateFilter}
-                    className="mt-2 w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+                    onClick={() => setDateFilter('all')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                      dateFilter === 'all'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                   >
-                    Clear Filter
+                    All Time
                   </button>
-                )}
+                  <button
+                    onClick={() => setDateFilter('today')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                      dateFilter === 'today'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => setDateFilter('week')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                      dateFilter === 'week'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    This Week
+                  </button>
+                  <button
+                    onClick={() => setDateFilter('month')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                      dateFilter === 'month'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    This Month
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Date Range */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Custom Range</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="Start Date"
+                  />
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="End Date"
+                  />
+                </div>
+                <button
+                  onClick={() => setDateFilter('custom')}
+                  disabled={!customStartDate || !customEndDate}
+                  className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    customStartDate && customEndDate
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Apply Custom Filter
+                </button>
+              </div>
+
+              {/* Filter Summary */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Results</label>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">{filteredBills.length}</span> bills found
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {getDateFilterLabel()}
+                  </div>
+                  {dateFilter !== 'all' && (
+                    <button
+                      onClick={clearDateFilter}
+                      className="mt-2 w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Bills List */}
-      <div className="space-y-4">
-        {/* Bills Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 sm:mb-0">
-            Bills ({filteredBills.length})
-          </h2>
-          {dateFilter !== 'all' && (
-            <div className="text-sm text-gray-600">
-              Showing {filteredBills.length} of {bills.length} total bills
+        {/* Bills List */}
+        <div className="space-y-4">
+          {/* Bills Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2 sm:mb-0">
+              Bills ({filteredBills.length})
+            </h2>
+            {dateFilter !== 'all' && (
+              <div className="text-sm text-gray-600">
+                Showing {filteredBills.length} of {bills.length} total bills
+              </div>
+            )}
+          </div>
+
+          {filteredBills.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+                {bills.length === 0 ? 'No Bills Found' : `No Bills Found for ${getDateFilterLabel()}`}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {bills.length === 0 
+                  ? "You haven't created any bills yet."
+                  : `No bills found within the selected date range.`
+                }
+              </p>
+              {bills.length === 0 ? (
+                <a href="/" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create Your First Bill
+                </a>
+              ) : (
+                <button
+                  onClick={clearDateFilter}
+                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear Filter
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredBills.map((bill) => (
+                <div 
+                  key={bill.id} 
+                  className="card bg-white shadow-md border-0 rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:bg-gray-50"
+                  onClick={() => viewBillDetails(bill)}
+                >
+                  <div className="p-3">
+                    {/* Compact Bill Info */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                          #{bill.bill_no}
+                        </span>
+                        <div className="text-left">
+                          <h3 className="font-medium text-gray-900 text-sm truncate max-w-32">
+                            {bill.customer_name || 'No Customer Name'}
+                          </h3>
+                          <p className="text-xs text-gray-500">{formatDate(bill.created_at)}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
+                        <div className="flex items-center justify-end space-x-2 mt-1">
+                          <span className="text-xs text-gray-600">
+                            {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
+                          </span>
+                          {bill.pdf_url && (
+                            <span className="w-2 h-2 bg-green-500 rounded-full" title="PDF Available"></span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {filteredBills.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-              {bills.length === 0 ? 'No Bills Found' : `No Bills Found for ${getDateFilterLabel()}`}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {bills.length === 0 
-                ? "You haven't created any bills yet."
-                : `No bills found within the selected date range.`
-              }
-            </p>
-            {bills.length === 0 ? (
-              <a href="/" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create Your First Bill
-              </a>
-            ) : (
-              <button
-                onClick={clearDateFilter}
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Clear Filter
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredBills.map((bill) => (
-              <div 
-                key={bill.id} 
-                className="card bg-white shadow-md border-0 rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:bg-gray-50"
-                onClick={() => viewBillDetails(bill)}
-              >
-                <div className="p-3">
-                  {/* Compact Bill Info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                        #{bill.bill_no}
-                      </span>
-                      <div className="text-left">
-                        <h3 className="font-medium text-gray-900 text-sm truncate max-w-32">
-                          {bill.customer_name || 'No Customer Name'}
-                        </h3>
-                        <p className="text-xs text-gray-500">{formatDate(bill.created_at)}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
-                      <div className="flex items-center justify-end space-x-2 mt-1">
-                        <span className="text-xs text-gray-600">
-                          {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
-                        </span>
-                        {bill.pdf_url && (
-                          <span className="w-2 h-2 bg-green-500 rounded-full" title="PDF Available"></span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bill Details Modal */}
-      {showBillDetails && selectedBill && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 pb-[80px]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Bill Details #{selectedBill.bill_no}</h3>
-                <button
-                  onClick={closeBillDetails}
-                  className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-700">Bill No:</span>
-                    <p className="text-gray-900">#{selectedBill.bill_no}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Date:</span>
-                    <p className="text-gray-900">{formatDate(selectedBill.created_at)}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Customer:</span>
-                    <p className="text-gray-900">{selectedBill.customer_name || 'No Customer Name'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Total:</span>
-                    <p className="text-gray-900 font-semibold">₹{selectedBill.total_price.toFixed(2)}</p>
-                  </div>
-                </div>
-                
-                {selectedBill.pdf_url && (
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>PDF Available:</strong> This bill has a stored PDF that can be downloaded anytime.
-                    </p>
-                  </div>
-                )}
-                
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Items:</h4>
-                  <div className="space-y-2">
-                    {selectedBill.items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <div>
-                          <span className="font-medium">{item.product_name}</span>
-                          <span className="text-gray-600 ml-2">
-                            Qty: {item.quantity} × ₹{item.price}
-                          </span>
-                        </div>
-                        <span className="font-semibold">₹{item.subtotal.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex space-x-3 pt-6 pb-2">
-                  {selectedBill.pdf_url ? (
-                    <button
-                      onClick={() => downloadStoredPDF(selectedBill.pdf_url, selectedBill)}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                    >
-                      Download Stored PDF
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => downloadPDF(selectedBill)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                    >
-                      Generate & Download PDF
-                    </button>
-                  )}
-                  <button
-                    onClick={() => printReceipt(selectedBill)}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    Print Receipt
-                  </button>
+        {/* Bill Details Modal */}
+        {showBillDetails && selectedBill && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 pb-[80px]">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Bill Details #{selectedBill.bill_no}</h3>
                   <button
                     onClick={closeBillDetails}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
                   >
-                    Close
+                    ✕
                   </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Print Modal */}
-      {showPrintModal && printBillData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Print Receipt #{printBillData.bill_no}</h3>
-                <button
-                  onClick={closePrintModal}
-                  className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-gray-600 mb-4">
-                    Click the button below to print this receipt. The receipt will be formatted specifically for printing.
-                  </p>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                    <div className="text-sm text-gray-700">
-                      <p><strong>Bill No:</strong> #{printBillData.bill_no}</p>
-                      <p><strong>Customer:</strong> {printBillData.customer_name || 'No Customer Name'}</p>
-                      <p><strong>Total:</strong> ₹{printBillData.total_price.toFixed(2)}</p>
-                    </div>
-                  </div>
                 </div>
                 
-                <div className="flex space-x-3">
-                  <button
-                    onClick={printFromModal}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-                  >
-                    🖨️ Print Receipt
-                  </button>
-                  <button
-                    onClick={closePrintModal}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Bill No:</span>
+                      <p className="text-gray-900">#{selectedBill.bill_no}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Date:</span>
+                      <p className="text-gray-900">{formatDate(selectedBill.created_at)}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Customer:</span>
+                      <p className="text-gray-900">{selectedBill.customer_name || 'No Customer Name'}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Total:</span>
+                      <p className="text-gray-900 font-semibold">₹{selectedBill.total_price.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedBill.pdf_url && (
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        <strong>PDF Available:</strong> This bill has a stored PDF that can be downloaded anytime.
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Items:</h4>
+                    <div className="space-y-2">
+                      {selectedBill.items.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <div>
+                            <span className="font-medium">{item.product_name}</span>
+                            <span className="text-gray-600 ml-2">
+                              Qty: {item.quantity} × ₹{item.price}
+                            </span>
+                          </div>
+                          <span className="font-semibold">₹{item.subtotal.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-3 pt-6 pb-2">
+                    {selectedBill.pdf_url ? (
+                      <button
+                        onClick={() => downloadStoredPDF(selectedBill.pdf_url, selectedBill)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Download Stored PDF
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => downloadPDF(selectedBill)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Generate & Download PDF
+                      </button>
+                    )}
+                    <button
+                      onClick={() => printReceipt(selectedBill)}
+                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Print Receipt
+                    </button>
+                    <button
+                      onClick={closeBillDetails}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Hidden Receipt for Printing */}
-      <div id="receipt-print-history" className="hidden fixed top-0 left-0 w-[58mm] p-2 text-center bg-white z-[-1]">
-        <div className="w-[58mm] p-2">
-          {/* Shop Name */}
-          <h1 className="text-center font-bold text-lg">Kiran Beauty Shop</h1>
-          <p className="text-center text-xs mb-2">--- Shine with Elegance ---</p>
-
-          {/* Bill Info */}
-          <div className="flex justify-between text-xs mb-2">
-            <span>Bill No: #<span id="receipt-bill-no">-</span></span>
-            <span>Date: <span id="receipt-date">-</span></span>
+        {/* Print Modal */}
+        {showPrintModal && printBillData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Print Receipt #{printBillData.bill_no}</h3>
+                  <button
+                    onClick={closePrintModal}
+                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-gray-600 mb-4">
+                      Click the button below to print this receipt. The receipt will be formatted specifically for printing.
+                    </p>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                      <div className="text-sm text-gray-700">
+                        <p><strong>Bill No:</strong> #{printBillData.bill_no}</p>
+                        <p><strong>Customer:</strong> {printBillData.customer_name || 'No Customer Name'}</p>
+                        <p><strong>Total:</strong> ₹{printBillData.total_price.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={printFromModal}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                    >
+                      🖨️ Print Receipt
+                    </button>
+                    <button
+                      onClick={closePrintModal}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-xs mb-2">
-            Customer: <span id="receipt-customer">-</span>
+        )}
+
+        {/* Hidden Receipt for Printing */}
+        <div id="receipt-print-history" className="hidden fixed top-0 left-0 w-[58mm] p-2 text-center bg-white z-[-1]">
+          <div className="w-[58mm] p-2">
+            {/* Shop Name */}
+            <h1 className="text-center font-bold text-lg">Kiran Beauty Shop</h1>
+            <p className="text-center text-xs mb-2">--- Shine with Elegance ---</p>
+
+            {/* Bill Info */}
+            <div className="flex justify-between text-xs mb-2">
+              <span>Bill No: #<span id="receipt-bill-no">-</span></span>
+              <span>Date: <span id="receipt-date">-</span></span>
+            </div>
+            <div className="text-xs mb-2">
+              Customer: <span id="receipt-customer">-</span>
+            </div>
+
+            {/* Items Table */}
+            <table className="w-full text-xs mb-2">
+              <thead>
+                <tr className="border-b border-black">
+                  <th className="text-left">Item</th>
+                  <th className="text-center">Qty</th>
+                  <th className="text-right">Price</th>
+                  <th className="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="receipt-items">
+                {/* Items will be populated dynamically */}
+              </tbody>
+            </table>
+
+            {/* Total */}
+            <div className="flex justify-between border-t border-black pt-1 text-sm font-bold">
+              <span>Total</span>
+              <span>₹<span id="receipt-total">-</span></span>
+            </div>
+
+            {/* Thank You Note */}
+            <p className="text-center text-xs mt-2">✨ Thank you for shopping with us ✨</p>
+            <p className="text-center text-xs">Visit Again 💖</p>
           </div>
-
-          {/* Items Table */}
-          <table className="w-full text-xs mb-2">
-            <thead>
-              <tr className="border-b border-black">
-                <th className="text-left">Item</th>
-                <th className="text-center">Qty</th>
-                <th className="text-right">Price</th>
-                <th className="text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody id="receipt-items">
-              {/* Items will be populated dynamically */}
-            </tbody>
-          </table>
-
-          {/* Total */}
-          <div className="flex justify-between border-t border-black pt-1 text-sm font-bold">
-            <span>Total</span>
-            <span>₹<span id="receipt-total">-</span></span>
-          </div>
-
-          {/* Thank You Note */}
-          <p className="text-center text-xs mt-2">✨ Thank you for shopping with us ✨</p>
-          <p className="text-center text-xs">Visit Again 💖</p>
         </div>
       </div>
-    </div>
+      <BottomNav />
+    </ProtectedRoute>
   )
 } 
