@@ -31,7 +31,7 @@
   }
 
   /* Ensure children inside receipt are visible */
-  #receipt-print * ,
+  #receipt-print *,
   #receipt-print-history * {
     visibility: visible !important;
     color: black !important;
@@ -68,11 +68,11 @@
     margin: 1mm 0 !important;
   }
 
-  /* Page break */
-  #receipt-print,
+  /* Page break - removed to prevent multiple pages */
+  /* #receipt-print,
   #receipt-print-history {
     page-break-after: always !important;
-  }
+  } */
 
   /* Exact print color */
   * {

@@ -60,6 +60,20 @@
     border: 1px solid #ccc !important;
   }
 
+  /* Print modal styles */
+  .print-modal {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50;
+  }
+
+  .print-modal-content {
+    @apply bg-white rounded-lg max-w-md w-full;
+  }
+
+  /* Receipt preview styles */
+  .receipt-preview {
+    @apply bg-gray-50 p-4 rounded-lg border border-gray-200;
+  }
+
   /* Receipt content styles */
   .receipt-header {
     text-align: center;

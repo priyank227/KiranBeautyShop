@@ -14,6 +14,8 @@ export default function HistoryPage() {
   const [filteredBills, setFilteredBills] = useState([])
   const [showBillDetails, setShowBillDetails] = useState(false)
   const [selectedBill, setSelectedBill] = useState(null)
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [printBillData, setPrintBillData] = useState(null)
 
   useEffect(() => {
     loadBills()
@@ -409,26 +411,178 @@ export default function HistoryPage() {
         return
       }
       
-      // Show the receipt element for printing using the show class
-      receiptElement.classList.add('show')
-      
-      // Force a reflow to ensure the element is properly rendered
-      receiptElement.offsetHeight
-      
-      // Wait a bit for the element to render
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Print the receipt
-      window.print()
-      
-      // Hide the element again after printing
-      setTimeout(() => {
-        receiptElement.classList.remove('show')
-      }, 1000)
+      // Create a new print window with only the receipt content
+      const printWindow = window.open('', '_blank', 'width=300,height=600')
+      if (printWindow) {
+        // Get the receipt HTML content
+        const receiptContent = receiptElement.innerHTML
+        
+        // Create a clean HTML document for printing
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Receipt Print - Bill #${billData.bill_no}</title>
+            <style>
+              @media print {
+                body {
+                  width: 58mm !important;
+                  margin: 0 !important;
+                  padding: 2mm !important;
+                  font-family: monospace !important;
+                  font-size: 12px !important;
+                  line-height: 1.2 !important;
+                  background: white !important;
+                  color: black !important;
+                }
+                
+                table {
+                  border-collapse: collapse !important;
+                  width: 100% !important;
+                  font-size: 11px !important;
+                }
+                
+                th, td {
+                  border: 1px solid black !important;
+                  padding: 1mm !important;
+                  text-align: left !important;
+                }
+                
+                th {
+                  font-weight: bold !important;
+                  background-color: #f3f4f6 !important;
+                }
+                
+                h1 {
+                  font-size: 14px !important;
+                  margin: 2mm 0 !important;
+                  font-weight: bold !important;
+                  text-align: center !important;
+                }
+                
+                p {
+                  font-size: 12px !important;
+                  margin: 1mm 0 !important;
+                  text-align: center !important;
+                }
+                
+                .receipt-container {
+                  width: 58mm !important;
+                  max-width: 58mm !important;
+                  margin: 0 auto !important;
+                }
+              }
+              
+              /* Screen styles for preview */
+              body {
+                width: 58mm;
+                margin: 0 auto;
+                padding: 2mm;
+                font-family: monospace;
+                font-size: 12px;
+                line-height: 1.2;
+                background: white;
+                color: black;
+                border: 1px solid #ccc;
+              }
+              
+              .receipt-container {
+                width: 58mm;
+                max-width: 58mm;
+                margin: 0 auto;
+              }
+              
+              table {
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 11px;
+              }
+              
+              th, td {
+                border: 1px solid black;
+                padding: 1mm;
+                text-align: left;
+              }
+              
+              th {
+                font-weight: bold;
+                background-color: #f3f4f6;
+              }
+              
+              h1 {
+                font-size: 14px;
+                margin: 2mm 0;
+                font-weight: bold;
+                text-align: center;
+              }
+              
+              p {
+                font-size: 12px;
+                margin: 1mm 0;
+                text-align: center;
+              }
+              
+              .print-button {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+              }
+              
+              .print-button:hover {
+                background: #0056b3;
+              }
+            </style>
+          </head>
+          <body>
+            <button class="print-button" onclick="window.print()">🖨️ Print Receipt</button>
+            <div class="receipt-container">
+              ${receiptContent}
+            </div>
+          </body>
+          </html>
+        `)
+        
+        printWindow.document.close()
+        
+        // Wait for content to load then focus the window
+        printWindow.onload = () => {
+          printWindow.focus()
+        }
+        
+      } else {
+        // Fallback if popup is blocked - show print modal instead
+        setPrintBillData(billData)
+        setShowPrintModal(true)
+      }
       
     } catch (error) {
       console.error('Error printing receipt:', error)
       alert('Error printing receipt. Please try again.')
+    }
+  }
+
+  // Alternative print method using modal
+  const openPrintModal = (billData) => {
+    setPrintBillData(billData)
+    setShowPrintModal(true)
+  }
+
+  const closePrintModal = () => {
+    setShowPrintModal(false)
+    setPrintBillData(null)
+  }
+
+  const printFromModal = () => {
+    if (printBillData) {
+      populateReceiptElement(printBillData)
+      window.print()
     }
   }
 
@@ -769,6 +923,56 @@ export default function HistoryPage() {
                     className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
                   >
                     Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Modal */}
+      {showPrintModal && printBillData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Print Receipt #{printBillData.bill_no}</h3>
+                <button
+                  onClick={closePrintModal}
+                  className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-gray-600 mb-4">
+                    Click the button below to print this receipt. The receipt will be formatted specifically for printing.
+                  </p>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div className="text-sm text-gray-700">
+                      <p><strong>Bill No:</strong> #{printBillData.bill_no}</p>
+                      <p><strong>Customer:</strong> {printBillData.customer_name || 'No Customer Name'}</p>
+                      <p><strong>Total:</strong> ₹{printBillData.total_price.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={printFromModal}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                  >
+                    🖨️ Print Receipt
+                  </button>
+                  <button
+                    onClick={closePrintModal}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
