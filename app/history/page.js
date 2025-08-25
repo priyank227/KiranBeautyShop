@@ -20,6 +20,11 @@ export default function HistoryPage() {
   const [selectedBill, setSelectedBill] = useState(null)
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [printBillData, setPrintBillData] = useState(null)
+  const [deleteMode, setDeleteMode] = useState(false)
+  const [selectedBills, setSelectedBills] = useState([])
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [billToDelete, setBillToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     loadBills()
@@ -616,6 +621,99 @@ export default function HistoryPage() {
     })
   }
 
+  const deleteBill = async (billId) => {
+    try {
+      setDeleting(true)
+      const { error } = await supabase
+        .from('bills')
+        .delete()
+        .eq('id', billId)
+
+      if (error) throw error
+
+      // Remove from local state
+      setBills(prevBills => prevBills.filter(bill => bill.id !== billId))
+      setFilteredBills(prevBills => prevBills.filter(bill => bill.id !== billId))
+      
+      // Close modals
+      setShowDeleteModal(false)
+      setBillToDelete(null)
+      setDeleteMode(false)
+      setSelectedBills([])
+      
+      console.log('Bill deleted successfully')
+    } catch (error) {
+      console.error('Error deleting bill:', error)
+      alert('Error deleting bill. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const deleteMultipleBills = async () => {
+    if (selectedBills.length === 0) return
+
+    try {
+      setDeleting(true)
+      
+      // Delete bills one by one
+      for (const billId of selectedBills) {
+        const { error } = await supabase
+          .from('bills')
+          .delete()
+          .eq('id', billId)
+
+        if (error) throw error
+      }
+
+      // Remove from local state
+      setBills(prevBills => prevBills.filter(bill => !selectedBills.includes(bill.id)))
+      setFilteredBills(prevBills => prevBills.filter(bill => !selectedBills.includes(bill.id)))
+      
+      // Close delete mode
+      setDeleteMode(false)
+      setSelectedBills([])
+      
+      console.log(`${selectedBills.length} bills deleted successfully`)
+    } catch (error) {
+      console.error('Error deleting bills:', error)
+      alert('Error deleting bills. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const toggleDeleteMode = () => {
+    setDeleteMode(!deleteMode)
+    setSelectedBills([])
+  }
+
+  const toggleBillSelection = (billId) => {
+    setSelectedBills(prev => 
+      prev.includes(billId) 
+        ? prev.filter(id => id !== billId)
+        : [...prev, billId]
+    )
+  }
+
+  const selectAllBills = () => {
+    setSelectedBills(filteredBills.map(bill => bill.id))
+  }
+
+  const deselectAllBills = () => {
+    setSelectedBills([])
+  }
+
+  const confirmDeleteBill = (bill) => {
+    setBillToDelete(bill)
+    setShowDeleteModal(true)
+  }
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false)
+    setBillToDelete(null)
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-64">
@@ -758,12 +856,65 @@ export default function HistoryPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2 sm:mb-0">
               Bills ({filteredBills.length})
             </h2>
-            {dateFilter !== 'all' && (
-              <div className="text-sm text-gray-600">
-                Showing {filteredBills.length} of {bills.length} total bills
-              </div>
-            )}
+            <div className="flex items-center space-x-3">
+              {dateFilter !== 'all' && (
+                <div className="text-sm text-gray-600">
+                  Showing {filteredBills.length} of {bills.length} total bills
+                </div>
+              )}
+              {filteredBills.length > 0 && (
+                <button
+                  onClick={toggleDeleteMode}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    deleteMode
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gray-600 text-white hover:bg-gray-700'
+                  }`}
+                >
+                  {deleteMode ? 'Cancel Delete' : 'Delete Bills'}
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Multiple Delete Controls */}
+          {deleteMode && filteredBills.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedBills.length === filteredBills.length}
+                      onChange={selectedBills.length === filteredBills.length ? deselectAllBills : selectAllBills}
+                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <span className="text-sm font-medium text-red-800">
+                      {selectedBills.length === filteredBills.length ? 'Deselect All' : 'Select All'}
+                    </span>
+                  </div>
+                  <span className="text-sm text-red-600">
+                    {selectedBills.length} of {filteredBills.length} bills selected
+                  </span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={deleteMultipleBills}
+                    disabled={selectedBills.length === 0 || deleting}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+                  >
+                    {deleting ? 'Deleting...' : `Delete ${selectedBills.length} Bill${selectedBills.length !== 1 ? 's' : ''}`}
+                  </button>
+                  <button
+                    onClick={toggleDeleteMode}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {filteredBills.length === 0 ? (
             <div className="text-center py-12">
@@ -805,13 +956,26 @@ export default function HistoryPage() {
               {filteredBills.map((bill) => (
                 <div 
                   key={bill.id} 
-                  className="card bg-white shadow-md border-0 rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:bg-gray-50"
-                  onClick={() => viewBillDetails(bill)}
+                  className={`card bg-white shadow-md border-0 rounded-lg transition-all duration-200 ${
+                    deleteMode 
+                      ? 'cursor-default hover:shadow-md' 
+                      : 'cursor-pointer hover:shadow-lg hover:bg-gray-50'
+                  }`}
+                  onClick={deleteMode ? undefined : () => viewBillDetails(bill)}
                 >
                   <div className="p-3">
                     {/* Compact Bill Info */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
+                        {deleteMode && (
+                          <input
+                            type="checkbox"
+                            checked={selectedBills.includes(bill.id)}
+                            onChange={() => toggleBillSelection(bill.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                          />
+                        )}
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                           #{bill.bill_no}
                         </span>
@@ -823,16 +987,34 @@ export default function HistoryPage() {
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
-                        <div className="flex items-center justify-end space-x-2 mt-1">
-                          <span className="text-xs text-gray-600">
-                            {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
-                          </span>
-                          {bill.pdf_url && (
-                            <span className="w-2 h-2 bg-green-500 rounded-full" title="PDF Available"></span>
-                          )}
+                      <div className="flex items-center space-x-3">
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
+                          <div className="flex items-center justify-end space-x-2 mt-1">
+                            <span className="text-xs text-gray-600">
+                              {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
+                            </span>
+                            {bill.pdf_url && (
+                              <span className="w-2 h-2 bg-green-500 rounded-full" title="PDF Available"></span>
+                            )}
+                          </div>
                         </div>
+                        
+                        {/* Delete Button */}
+                        {deleteMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              confirmDeleteBill(bill)
+                            }}
+                            className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+                            title="Delete this bill"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -976,6 +1158,65 @@ export default function HistoryPage() {
                     </button>
                     <button
                       onClick={closePrintModal}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && billToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-red-600">Confirm Delete</h3>
+                  <button
+                    onClick={closeDeleteModal}
+                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                      Delete Bill #{billToDelete.bill_no}?
+                    </h4>
+                    
+                    <p className="text-gray-600 mb-4">
+                      This action cannot be undone. The bill and all its data will be permanently deleted.
+                    </p>
+                    
+                    <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+                      <p><strong>Customer:</strong> {billToDelete.customer_name || 'No Customer Name'}</p>
+                      <p><strong>Total:</strong> ₹{billToDelete.total_price.toFixed(2)}</p>
+                      <p><strong>Items:</strong> {billToDelete.items.length}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => deleteBill(billToDelete.id)}
+                      disabled={deleting}
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+                    >
+                      {deleting ? 'Deleting...' : 'Delete Bill'}
+                    </button>
+                    <button
+                      onClick={closeDeleteModal}
                       className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors"
                     >
                       Cancel

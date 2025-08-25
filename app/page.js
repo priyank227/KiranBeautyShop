@@ -27,6 +27,8 @@ export default function HomePage() {
   const [editProductName, setEditProductName] = useState('')
   const [editQuantity, setEditQuantity] = useState(1)
   const [editPrice, setEditPrice] = useState('')
+  const [lastSelectedProduct, setLastSelectedProduct] = useState('')
+  const [lastSelectedPrice, setLastSelectedPrice] = useState('')
 
   useEffect(() => {
     // Generate or retrieve device ID
@@ -79,6 +81,10 @@ export default function HomePage() {
     }
 
     setCartItems([...cartItems, newItem])
+    
+    // Store the last selected product and price for repeat functionality
+    setLastSelectedProduct(selectedProduct)
+    setLastSelectedPrice(price)
     
     // Clear the form for next item
     setSelectedProduct('')
@@ -565,11 +571,6 @@ export default function HomePage() {
   }
 
   const confirmBill = async () => {
-    if (!customerName.trim()) {
-      alert('Please enter customer name')
-      return
-    }
-
     if (cartItems.length === 0) {
       alert('Please add at least one item to the bill')
       return
@@ -578,10 +579,10 @@ export default function HomePage() {
     setLoading(true)
 
     try {
-      // Create bill data
+      // Create bill data - customer name is now optional
       const billData = {
         device_id: deviceId,
-        customer_name: customerName.trim(),
+        customer_name: customerName.trim() || 'Walk-in Customer', // Default name if empty
         items: cartItems,
         total_price: getTotalPrice()
       }
@@ -662,6 +663,16 @@ export default function HomePage() {
     setCurrentBill(null)
   }
 
+  const repeatLastItem = () => {
+    if (lastSelectedProduct && lastSelectedPrice) {
+      setSelectedProduct(lastSelectedProduct)
+      setPrice(lastSelectedPrice)
+      setQuantity(1)
+    } else {
+      alert('No previous item to repeat. Please add an item first.')
+    }
+  }
+
   return (
     <ProtectedRoute>
       <div className="space-y-6 pb-24">
@@ -676,13 +687,26 @@ export default function HomePage() {
         {/* Add Item Form */}
         <div className="card bg-white shadow-lg border-0 rounded-xl">
           <div className="p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center">
-              <span className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center justify-between">
+              <div className="flex items-center">
+                <span className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </span>
+                Add Item to Bill
+              </div>
+              <button
+                onClick={repeatLastItem}
+                disabled={!lastSelectedProduct}
+                className="px-3 py-2 bg-green-100 hover:bg-green-200 disabled:bg-gray-100 disabled:cursor-not-allowed text-green-700 hover:text-green-800 disabled:text-gray-400 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium"
+                title="Repeat last selected product"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-              </span>
-              Add Item to Bill
+                <span>Repeat Item</span>
+              </button>
             </h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -941,20 +965,20 @@ export default function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Customer Name
+                    Customer Name <span className="text-gray-500 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="text"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
-                    placeholder="Enter customer name"
+                    placeholder="Enter customer name (or leave blank for walk-in)"
                   />
                 </div>
                 <div className="flex items-end">
                   <button
                     onClick={confirmBill}
-                    disabled={loading || !customerName.trim()}
+                    disabled={loading}
                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
                   >
                     <span className="flex items-center justify-center text-sm sm:text-base">
