@@ -537,7 +537,6 @@ export default function HistoryPage() {
               line-height: 1.4;
               background: white;
               color: black;
-              border: 1px solid #ccc;
             }
             
             .print-controls {
