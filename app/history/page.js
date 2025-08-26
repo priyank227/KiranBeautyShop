@@ -215,16 +215,16 @@ export default function HistoryPage() {
       if (customerElement) customerElement.textContent = billData.customer_name || 'No Customer Name'
       if (totalElement) totalElement.textContent = billData.total_price.toFixed(2)
       
-      // Populate items
+      // Populate items with proper styling
       if (itemsElement) {
         itemsElement.innerHTML = ''
         billData.items.forEach((item, index) => {
           const row = document.createElement('tr')
           row.innerHTML = `
-            <td>${item.product_name}</td>
-            <td class="text-center">${item.quantity}</td>
-            <td class="text-right">₹${item.price}</td>
-            <td class="text-right">₹${item.subtotal.toFixed(2)}</td>
+            <td class="py-[2px]">${item.product_name}</td>
+            <td class="text-center py-[2px]">${item.quantity}</td>
+            <td class="text-right py-[2px]">₹${Number(item.price).toFixed(2)}</td>
+            <td class="text-right py-[2px]">₹${Number(item.subtotal).toFixed(2)}</td>
           `
           itemsElement.appendChild(row)
         })
@@ -438,7 +438,7 @@ export default function HistoryPage() {
                   width: 58mm !important;
                   margin: 0 !important;
                   padding: 2mm !important;
-                  font-family: monospace !important;
+                  font-family: Arial, sans-serif !important;
                   font-size: 12px !important;
                   line-height: 1.2 !important;
                   background: white !important;
@@ -480,6 +480,11 @@ export default function HistoryPage() {
                   max-width: 58mm !important;
                   margin: 0 auto !important;
                 }
+                
+                img {
+                  max-width: 100% !important;
+                  height: auto !important;
+                }
               }
               
               /* Screen styles for preview */
@@ -487,7 +492,7 @@ export default function HistoryPage() {
                 width: 58mm;
                 margin: 0 auto;
                 padding: 2mm;
-                font-family: monospace;
+                font-family: Arial, sans-serif;
                 font-size: 12px;
                 line-height: 1.2;
                 background: white;
@@ -531,6 +536,11 @@ export default function HistoryPage() {
                 text-align: center;
               }
               
+              img {
+                max-width: 100%;
+                height: auto;
+              }
+              
               .print-button {
                 position: fixed;
                 top: 10px;
@@ -551,6 +561,7 @@ export default function HistoryPage() {
           </head>
           <body>
             <button class="print-button" onclick="window.print()">🖨️ Print Receipt</button>
+            <button onclick="window.close()">Cancel</button>
             <div class="receipt-container">
               ${receiptContent}
             </div>
@@ -1229,44 +1240,86 @@ export default function HistoryPage() {
         )}
 
         {/* Hidden Receipt for Printing */}
-        <div id="receipt-print-history" className="hidden fixed top-0 left-0 w-[58mm] p-2 text-center bg-white z-[-1]">
+        <div id="receipt-print-history" className="hidden fixed top-0 left-0 w-[58mm] p-2 bg-white text-black z-[-1]">
           <div className="w-[58mm] p-2">
-            {/* Shop Name */}
-            <h1 className="text-center font-bold text-lg">Kiran Beauty Shop</h1>
-            <p className="text-center text-xs mb-2">--- Shine with Elegance ---</p>
+            {/* Logo */}
+            <div className="flex justify-center mb-1" style={{ display: 'flex', justifyContent: 'center' }}>
+              <img src="apple-touch-icon.png" height={50} width={50} alt="Logo" />
+            </div>
 
-            {/* Bill Info */}
-            <div className="flex justify-between text-xs mb-2">
-              <span>Bill No: #<span id="receipt-bill-no">-</span></span>
+            {/* Shop info */}
+            <h1 className="text-center font-bold text-lg leading-tight">
+              Kiran Beauty Shop
+            </h1>
+            <p className="text-center text-[11px] leading-tight">
+              Since 1992
+            </p>
+            <p className="text-center text-xs mb-2">
+              — Shine with Elegance —
+            </p>
+
+            {/* Bill info row */}
+            <div className="flex justify-between items-start text-xs">
+              {/* left column (stacked) */}
+              <div className="flex flex-col gap-[2px] text-left">
+                <span>Bill No: #<span id="receipt-bill-no">-</span></span>
+                
+              </div>
               <span>Date: <span id="receipt-date">-</span></span>
+              {/* right only mobile */}
+              <div className="text-right">Mo.: 8000544966</div>
             </div>
             <div className="text-xs mb-2">
-              Customer: <span id="receipt-customer">-</span>
+              <span>Customer: <span id="receipt-customer">-</span></span>
             </div>
 
-            {/* Items Table */}
-            <table className="w-full text-xs mb-2">
+            {/* Items table */}
+            <table className="w-full text-xs border-collapse pt-2 mb-3 pb-2">
               <thead>
                 <tr className="border-b border-black">
-                  <th className="text-left">Item</th>
-                  <th className="text-center">Qty</th>
-                  <th className="text-right">Price</th>
-                  <th className="text-right">Subtotal</th>
+                  <th className="text-left py-1">Item</th>
+                  <th className="text-center py-1">Qty</th>
+                  <th className="text-right py-1">Price</th>
+                  <th className="text-right py-1">Subtotal</th>
                 </tr>
               </thead>
               <tbody id="receipt-items">
                 {/* Items will be populated dynamically */}
               </tbody>
+              <tfoot>
+                <tr className="border-t border-black">
+                  <td colSpan={3} className="text-right font-bold py-1 pr-1">
+                    Total
+                  </td>
+                  <td className="text-right font-bold py-1">
+                    ₹<span id="receipt-total">-</span>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
 
-            {/* Total */}
-            <div className="flex justify-between border-t border-black pt-1 text-sm font-bold">
-              <span>Total</span>
-              <span>₹<span id="receipt-total">-</span></span>
+            {/* Fixed notes */}
+            <div className="text-xs text-center mb-4">
+              <p>✨ Fixed Rate ✨</p>
+              <p>🚫 No Return</p>
+              <p>🚫 No Replacement</p>
             </div>
 
-            {/* Thank You Note */}
-            <p className="text-center text-xs mt-2">✨ Thank you for shopping with us ✨</p>
+            {/* QR Code */}
+            <div className="flex justify-center mt-2 mb-2">
+              {/* replace with your dynamic QR if needed */}
+              <img
+                src="/qr.png"
+                alt="UPI QR"
+                className="w-24 h-24"
+              />
+              {/* or mount a <canvas id="qrCanvas" /> here */}
+            </div>
+
+            {/* Thank you */}
+            <p className="text-center text-xs mt-1">
+              ✨ Thank you for shopping with us ✨
+            </p>
             <p className="text-center text-xs">Visit Again 💖</p>
           </div>
         </div>
