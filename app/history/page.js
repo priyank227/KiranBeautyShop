@@ -1,729 +1,793 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { getBills, supabase } from '../../lib/supabase'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
-import ProtectedRoute from '../components/ProtectedRoute'
-import BottomNav from '../components/BottomNav'
-import { useAuth } from '../contexts/AuthContext'
+import { useState, useEffect } from "react";
+import { getBills, supabase } from "../../lib/supabase";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import ProtectedRoute from "../components/ProtectedRoute";
+import BottomNav from "../components/BottomNav";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function HistoryPage() {
-  const { username, logout } = useAuth()
-  const [bills, setBills] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [dateFilter, setDateFilter] = useState('all')
-  const [customStartDate, setCustomStartDate] = useState('')
-  const [customEndDate, setCustomEndDate] = useState('')
-  const [filteredBills, setFilteredBills] = useState([])
-  const [showBillDetails, setShowBillDetails] = useState(false)
-  const [selectedBill, setSelectedBill] = useState(null)
-  const [showPrintModal, setShowPrintModal] = useState(false)
-  const [printBillData, setPrintBillData] = useState(null)
-  const [deleteMode, setDeleteMode] = useState(false)
-  const [selectedBills, setSelectedBills] = useState([])
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [billToDelete, setBillToDelete] = useState(null)
-  const [deleting, setDeleting] = useState(false)
+  const { username, logout } = useAuth();
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [filteredBills, setFilteredBills] = useState([]);
+  const [showBillDetails, setShowBillDetails] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printBillData, setPrintBillData] = useState(null);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedBills, setSelectedBills] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [billToDelete, setBillToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    loadBills()
-  }, [])
+    loadBills();
+  }, []);
 
   useEffect(() => {
-    filterBills()
-  }, [bills, dateFilter, customStartDate, customEndDate])
+    filterBills();
+  }, [bills, dateFilter, customStartDate, customEndDate]);
 
   const loadBills = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
-        .from('bills')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("bills")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      if (error) throw error
+      if (error) throw error;
 
-      setBills(data || [])
-      console.log('Bills loaded:', data)
+      setBills(data || []);
+      console.log("Bills loaded:", data);
     } catch (error) {
-      console.error('Error loading bills:', error)
+      console.error("Error loading bills:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const filterBills = () => {
-    let filtered = [...bills]
+    let filtered = [...bills];
 
-    if (dateFilter === 'today') {
-      const today = new Date()
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
-      
-      filtered = bills.filter(bill => {
-        const billDate = new Date(bill.created_at)
-        return billDate >= startOfDay && billDate < endOfDay
-      })
-    } else if (dateFilter === 'week') {
-      const today = new Date()
-      const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay())
-      startOfWeek.setHours(0, 0, 0, 0)
-      
-      filtered = bills.filter(bill => {
-        const billDate = new Date(bill.created_at)
-        return billDate >= startOfWeek
-      })
-    } else if (dateFilter === 'month') {
-      const today = new Date()
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-      
-      filtered = bills.filter(bill => {
-        const billDate = new Date(bill.created_at)
-        return billDate >= startOfMonth
-      })
-    } else if (dateFilter === 'custom' && customStartDate && customEndDate) {
-      const startDate = new Date(customStartDate)
-      const endDate = new Date(customEndDate)
-      endDate.setHours(23, 59, 59, 999) // End of day
-      
-      filtered = bills.filter(bill => {
-        const billDate = new Date(bill.created_at)
-        return billDate >= startDate && billDate <= endDate
-      })
+    if (dateFilter === "today") {
+      const today = new Date();
+      const startOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+      filtered = bills.filter((bill) => {
+        const billDate = new Date(bill.created_at);
+        return billDate >= startOfDay && billDate < endOfDay;
+      });
+    } else if (dateFilter === "week") {
+      const today = new Date();
+      const startOfWeek = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - today.getDay()
+      );
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      filtered = bills.filter((bill) => {
+        const billDate = new Date(bill.created_at);
+        return billDate >= startOfWeek;
+      });
+    } else if (dateFilter === "month") {
+      const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      filtered = bills.filter((bill) => {
+        const billDate = new Date(bill.created_at);
+        return billDate >= startOfMonth;
+      });
+    } else if (dateFilter === "custom" && customStartDate && customEndDate) {
+      const startDate = new Date(customStartDate);
+      const endDate = new Date(customEndDate);
+      endDate.setHours(23, 59, 59, 999); // End of day
+
+      filtered = bills.filter((bill) => {
+        const billDate = new Date(bill.created_at);
+        return billDate >= startDate && billDate <= endDate;
+      });
     }
 
-    setFilteredBills(filtered)
-  }
+    setFilteredBills(filtered);
+  };
 
   const clearDateFilter = () => {
-    setDateFilter('all')
-    setCustomStartDate('')
-    setCustomEndDate('')
-  }
+    setDateFilter("all");
+    setCustomStartDate("");
+    setCustomEndDate("");
+  };
 
   const viewBillDetails = (bill) => {
-    setSelectedBill(bill)
-    setShowBillDetails(true)
-  }
+    setSelectedBill(bill);
+    setShowBillDetails(true);
+  };
 
   const closeBillDetails = () => {
-    setShowBillDetails(false)
-    setSelectedBill(null)
-  }
+    setShowBillDetails(false);
+    setSelectedBill(null);
+  };
 
   const getDateFilterLabel = () => {
     switch (dateFilter) {
-      case 'today':
-        return 'Today'
-      case 'week':
-        return 'This Week'
-      case 'month':
-        return 'This Month'
-      case 'custom':
+      case "today":
+        return "Today";
+      case "week":
+        return "This Week";
+      case "month":
+        return "This Month";
+      case "custom":
         if (customStartDate && customEndDate) {
-          const start = new Date(customStartDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
-          const end = new Date(customEndDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-          return `${start} - ${end}`
+          const start = new Date(customStartDate).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+          });
+          const end = new Date(customEndDate).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+          return `${start} - ${end}`;
         }
-        return 'Custom Range'
+        return "Custom Range";
       default:
-        return 'All Time'
+        return "All Time";
     }
-  }
+  };
 
   const generateDirectPDF = (billData) => {
     try {
-      console.log('Generating direct PDF for:', billData)
-      
+      console.log("Generating direct PDF for:", billData);
+
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      })
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
       // Set font
-      pdf.setFont('helvetica')
-      
+      pdf.setFont("helvetica");
+
       // Header
-      pdf.setFontSize(18)
-      pdf.text('Kiran Beauty Shop', 105, 20, { align: 'center' })
-      
-      pdf.setFontSize(12)
-      pdf.text('--- Shine with Elegance ---', 105, 30, { align: 'center' })
-      
+      pdf.setFontSize(18);
+      pdf.text("Kiran Beauty Shop", 105, 20, { align: "center" });
+
+      pdf.setFontSize(12);
+      pdf.text("--- Shine with Elegance ---", 105, 30, { align: "center" });
+
       // Bill details
-      pdf.setFontSize(10)
-      pdf.text(`Bill No: #${billData.bill_no}`, 20, 50)
-      pdf.text(`Date: ${new Date(billData.created_at).toLocaleDateString('en-IN')}`, 20, 60)
-      pdf.text(`Customer: ${billData.customer_name}`, 20, 70)
-      
+      pdf.setFontSize(10);
+      pdf.text(`Bill No: #${billData.bill_no}`, 20, 50);
+      pdf.text(
+        `Date: ${new Date(billData.created_at).toLocaleDateString("en-IN")}`,
+        20,
+        60
+      );
+      pdf.text(`Customer: ${billData.customer_name}`, 20, 70);
+
       // Items table header
-      pdf.text('Items:', 20, 90)
-      pdf.line(20, 95, 190, 95) // Header line
-      
+      pdf.text("Items:", 20, 90);
+      pdf.line(20, 95, 190, 95); // Header line
+
       // Table headers
-      pdf.text('Item', 25, 105)
-      pdf.text('Qty', 100, 105)
-      pdf.text('Price', 130, 105)
-      pdf.text('Subtotal', 160, 105)
-      
-      pdf.line(20, 110, 190, 110) // Separator line
-      
-      let yPosition = 120
-      
+      pdf.text("Item", 25, 105);
+      pdf.text("Qty", 100, 105);
+      pdf.text("Price", 130, 105);
+      pdf.text("Subtotal", 160, 105);
+
+      pdf.line(20, 110, 190, 110); // Separator line
+
+      let yPosition = 120;
+
       // Items
       billData.items.forEach((item, index) => {
-        pdf.text(item.product_name, 25, yPosition)
-        pdf.text(item.quantity.toString(), 100, yPosition)
-        pdf.text(`₹${item.price}`, 130, yPosition)
-        pdf.text(`₹${item.subtotal.toFixed(2)}`, 160, yPosition)
-        yPosition += 15
-      })
-      
+        pdf.text(item.product_name, 25, yPosition);
+        pdf.text(item.quantity.toString(), 100, yPosition);
+        pdf.text(`₹${item.price}`, 130, yPosition);
+        pdf.text(`₹${item.subtotal.toFixed(2)}`, 160, yPosition);
+        yPosition += 15;
+      });
+
       // Total line
-      pdf.line(20, yPosition + 5, 190, yPosition + 5)
-      pdf.setFontSize(12)
-      pdf.text('Total:', 20, yPosition + 15)
-      pdf.text(`₹${billData.total_price.toFixed(2)}`, 160, yPosition + 15)
-      
+      pdf.line(20, yPosition + 5, 190, yPosition + 5);
+      pdf.setFontSize(12);
+      pdf.text("Total:", 20, yPosition + 15);
+      pdf.text(`₹${billData.total_price.toFixed(2)}`, 160, yPosition + 15);
+
       // Footer
-      pdf.setFontSize(10)
-      pdf.text('✨ Thank you for shopping with us ✨', 105, yPosition + 35, { align: 'center' })
-      pdf.text('Visit Again 💖', 105, yPosition + 42, { align: 'center' })
-      
-      console.log('Direct PDF generated successfully')
-      return pdf
-      
+      pdf.setFontSize(10);
+      pdf.text("✨ Thank you for shopping with us ✨", 105, yPosition + 35, {
+        align: "center",
+      });
+      pdf.text("Visit Again 💖", 105, yPosition + 42, { align: "center" });
+
+      console.log("Direct PDF generated successfully");
+      return pdf;
     } catch (error) {
-      console.error('Error generating direct PDF:', error)
-      throw error
+      console.error("Error generating direct PDF:", error);
+      throw error;
     }
-  }
+  };
 
   const populateReceiptElement = (billData) => {
     try {
       // Populate bill info
-      const billNoElement = document.getElementById('receipt-bill-no')
-      const dateElement = document.getElementById('receipt-date')
-      const customerElement = document.getElementById('receipt-customer')
-      const totalElement = document.getElementById('receipt-total')
-      const itemsElement = document.getElementById('receipt-items')
-      
-      if (billNoElement) billNoElement.textContent = billData.bill_no
-      if (dateElement) dateElement.textContent = new Date(billData.created_at).toLocaleDateString('en-IN')
-      if (customerElement) customerElement.textContent = billData.customer_name || 'No Customer Name'
-      if (totalElement) totalElement.textContent = billData.total_price.toFixed(2)
-      
+      const billNoElement = document.getElementById("receipt-bill-no");
+      const dateElement = document.getElementById("receipt-date");
+      const customerElement = document.getElementById("receipt-customer");
+      const totalElement = document.getElementById("receipt-total");
+      const itemsElement = document.getElementById("receipt-items");
+
+      if (billNoElement) billNoElement.textContent = billData.bill_no;
+      if (dateElement)
+        dateElement.textContent = new Date(
+          billData.created_at
+        ).toLocaleDateString("en-IN");
+      if (customerElement)
+        customerElement.textContent =
+          billData.customer_name || "No Customer Name";
+      if (totalElement)
+        totalElement.textContent = billData.total_price.toFixed(2);
+
       // Populate items with proper styling
       if (itemsElement) {
-        itemsElement.innerHTML = ''
+        itemsElement.innerHTML = "";
         billData.items.forEach((item, index) => {
-          const row = document.createElement('tr')
+          const row = document.createElement("tr");
           row.innerHTML = `
             <td class="py-[2px]">${item.product_name}</td>
             <td class="text-center py-[2px]">${item.quantity}</td>
-            <td class="text-right py-[2px]">₹${Number(item.price).toFixed(2)}</td>
-            <td class="text-right py-[2px]">₹${Number(item.subtotal).toFixed(2)}</td>
-          `
-          itemsElement.appendChild(row)
-        })
+            <td class="text-right py-[2px]">₹${Number(item.price).toFixed(
+              2
+            )}</td>
+            <td class="text-right py-[2px]">₹${Number(item.subtotal).toFixed(
+              2
+            )}</td>
+          `;
+          itemsElement.appendChild(row);
+        });
       }
-      
-      console.log('Receipt element populated with bill data:', billData)
+
+      console.log("Receipt element populated with bill data:", billData);
     } catch (error) {
-      console.error('Error populating receipt element:', error)
+      console.error("Error populating receipt element:", error);
     }
-  }
+  };
 
   const generatePDF = async (billData) => {
     try {
-      console.log('Starting PDF generation for bill:', billData)
-      
+      console.log("Starting PDF generation for bill:", billData);
+
       // First, populate the receipt element with the bill data
-      populateReceiptElement(billData)
-      
-      const receiptElement = document.getElementById('receipt-print-history')
+      populateReceiptElement(billData);
+
+      const receiptElement = document.getElementById("receipt-print-history");
       if (!receiptElement) {
-        console.error('Receipt element not found')
-        return generateDirectPDF(billData)
+        console.error("Receipt element not found");
+        return generateDirectPDF(billData);
       }
-      
+
       // Temporarily show the receipt element with proper positioning
-      receiptElement.classList.remove('hidden')
-      receiptElement.style.position = 'absolute'
-      receiptElement.style.top = '0'
-      receiptElement.style.left = '0'
-      receiptElement.style.zIndex = '9999'
-      receiptElement.style.visibility = 'visible'
-      receiptElement.style.backgroundColor = 'white'
-      receiptElement.style.width = '220px'
-      receiptElement.style.height = 'auto'
-      receiptElement.style.overflow = 'visible'
-      
+      receiptElement.classList.remove("hidden");
+      receiptElement.style.position = "absolute";
+      receiptElement.style.top = "0";
+      receiptElement.style.left = "0";
+      receiptElement.style.zIndex = "9999";
+      receiptElement.style.visibility = "visible";
+      receiptElement.style.backgroundColor = "white";
+      receiptElement.style.width = "220px";
+      receiptElement.style.height = "auto";
+      receiptElement.style.overflow = "visible";
+
       // Force a reflow to ensure the element is properly rendered
-      receiptElement.offsetHeight
-      
+      receiptElement.offsetHeight;
+
       // Wait for rendering and ensure content is visible
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      console.log('Receipt element dimensions:', {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      console.log("Receipt element dimensions:", {
         offsetWidth: receiptElement.offsetWidth,
         offsetHeight: receiptElement.offsetHeight,
         scrollWidth: receiptElement.scrollWidth,
         scrollHeight: receiptElement.scrollHeight,
         clientWidth: receiptElement.clientWidth,
-        clientHeight: receiptElement.clientHeight
-      })
-      
+        clientHeight: receiptElement.clientHeight,
+      });
+
       // Check if content is actually visible
-      const contentCheck = receiptElement.innerHTML
-      console.log('Receipt content length:', contentCheck.length)
-      console.log('Receipt content preview:', contentCheck.substring(0, 200))
-      
+      const contentCheck = receiptElement.innerHTML;
+      console.log("Receipt content length:", contentCheck.length);
+      console.log("Receipt content preview:", contentCheck.substring(0, 200));
+
       const canvas = await html2canvas(receiptElement, {
-        width: 220, // 58mm = 220px at 96 DPI
+        width: 560, // 148mm = 560px at 96 DPI
         height: receiptElement.scrollHeight,
-        scale: 1, // Use scale 1 for better compatibility
+        scale: 1,
         useCORS: true,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         allowTaint: true,
         foreignObjectRendering: true,
-        logging: true, // Enable logging to debug
-        removeContainer: false,
-        ignoreElements: (element) => {
-          // Don't ignore any elements
-          return false
-        }
-      })
-
-      console.log('Canvas generated:', { 
-        width: canvas.width, 
-        height: canvas.height,
-        dataURL: canvas.toDataURL().substring(0, 100) + '...'
-      })
+        logging: true,
+      });
 
       // Hide the element again
-      receiptElement.classList.add('hidden')
-      receiptElement.style.position = 'fixed'
-      receiptElement.style.zIndex = '-1'
-      receiptElement.style.visibility = 'hidden'
+      receiptElement.classList.add("hidden");
+      receiptElement.style.position = "fixed";
+      receiptElement.style.zIndex = "-1";
+      receiptElement.style.visibility = "hidden";
 
-      const imgData = canvas.toDataURL('image/png', 1.0)
-      console.log('Image data generated, length:', imgData.length)
-      
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      console.log("Image data generated, length:", imgData.length);
+
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: [58, receiptElement.scrollHeight * 0.264583] // 58mm width
-      })
+        orientation: "portrait",
+        unit: "mm",
+        format: [148, receiptElement.scrollHeight * 0.264583], // 148mm width
+      });
 
-      pdf.addImage(imgData, 'PNG', 0, 0, 58, receiptElement.scrollHeight * 0.264583)
-      console.log('PDF created successfully')
-      
-      return pdf
+      pdf.addImage(
+        imgData,
+        "PNG",
+        0,
+        0,
+        148,
+        receiptElement.scrollHeight * 0.264583
+      );
+      console.log("PDF created successfully");
+
+      return pdf;
     } catch (error) {
       // Make sure to hide the element even if there's an error
-      const receiptElement = document.getElementById('receipt-print-history')
+      const receiptElement = document.getElementById("receipt-print-history");
       if (receiptElement) {
-        receiptElement.classList.add('hidden')
-        receiptElement.style.position = 'fixed'
-        receiptElement.style.zIndex = '-1'
-        receiptElement.style.visibility = 'hidden'
+        receiptElement.classList.add("hidden");
+        receiptElement.style.position = "fixed";
+        receiptElement.style.zIndex = "-1";
+        receiptElement.style.visibility = "hidden";
       }
-      
-      console.error('Error generating PDF with html2canvas:', error)
-      
+
+      console.error("Error generating PDF with html2canvas:", error);
+
       // Fallback: Generate direct PDF
-      console.log('Falling back to direct PDF generation')
-      return generateDirectPDF(billData)
+      console.log("Falling back to direct PDF generation");
+      return generateDirectPDF(billData);
     }
-  }
+  };
 
   const generateSimplePDF = (billData) => {
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    })
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
 
     // Set font
-    pdf.setFont('helvetica')
-    
+    pdf.setFont("helvetica");
+
     // Header
-    pdf.setFontSize(18)
-    pdf.text('KIRAN BEAUTY SHOP', 105, 20, { align: 'center' })
-    
-    pdf.setFontSize(12)
-    pdf.text('Beauty Products & Cosmetics', 105, 30, { align: 'center' })
-    
+    pdf.setFontSize(18);
+    pdf.text("KIRAN BEAUTY SHOP", 105, 20, { align: "center" });
+
+    pdf.setFontSize(12);
+    pdf.text("Beauty Products & Cosmetics", 105, 30, { align: "center" });
+
     // Bill details
-    pdf.setFontSize(10)
-    pdf.text(`Bill No: #${billData.bill_no}`, 20, 50)
-    pdf.text(`Date: ${new Date(billData.created_at).toLocaleDateString()}`, 20, 60)
-    pdf.text(`Customer: ${billData.customer_name}`, 20, 70)
-    
+    pdf.setFontSize(10);
+    pdf.text(`Bill No: #${billData.bill_no}`, 20, 50);
+    pdf.text(
+      `Date: ${new Date(billData.created_at).toLocaleDateString()}`,
+      20,
+      60
+    );
+    pdf.text(`Customer: ${billData.customer_name}`, 20, 70);
+
     // Items
-    pdf.text('Items:', 20, 90)
-    let yPosition = 100
-    
+    pdf.text("Items:", 20, 90);
+    let yPosition = 100;
+
     billData.items.forEach((item, index) => {
-      pdf.text(`${item.product_name}`, 25, yPosition)
-      pdf.text(`Qty: ${item.quantity} × ₹${item.price}`, 25, yPosition + 5)
-      pdf.text(`Subtotal: ₹${item.subtotal.toFixed(2)}`, 25, yPosition + 10)
-      yPosition += 20
-    })
-    
+      pdf.text(`${item.product_name}`, 25, yPosition);
+      pdf.text(`Qty: ${item.quantity} × ₹${item.price}`, 25, yPosition + 5);
+      pdf.text(`Subtotal: ₹${item.subtotal.toFixed(2)}`, 25, yPosition + 10);
+      yPosition += 20;
+    });
+
     // Total
-    pdf.setFontSize(12)
-    pdf.text(`TOTAL: ₹${billData.total_price.toFixed(2)}`, 20, yPosition + 10)
-    
+    pdf.setFontSize(12);
+    pdf.text(`TOTAL: ₹${billData.total_price.toFixed(2)}`, 20, yPosition + 10);
+
     // Footer
-    pdf.setFontSize(10)
-    pdf.text('Thank you for shopping!', 105, yPosition + 25, { align: 'center' })
-    pdf.text('Visit again', 105, yPosition + 32, { align: 'center' })
-    
-    return pdf
-  }
+    pdf.setFontSize(10);
+    pdf.text("Thank you for shopping!", 105, yPosition + 25, {
+      align: "center",
+    });
+    pdf.text("Visit again", 105, yPosition + 32, { align: "center" });
+
+    return pdf;
+  };
 
   const downloadPDF = async (billData) => {
     try {
-      const pdf = await generatePDF(billData)
-      const pdfBlob = pdf.output('blob')
-      
+      const pdf = await generatePDF(billData);
+      const pdfBlob = pdf.output("blob");
+
       // Create a download link
-      const url = URL.createObjectURL(pdfBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `bill_${billData.bill_no}_${billData.customer_name || 'customer'}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `bill_${billData.bill_no}_${
+        billData.customer_name || "customer"
+      }.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading PDF:', error)
-      alert('Error downloading PDF. Please try again.')
+      console.error("Error downloading PDF:", error);
+      alert("Error downloading PDF. Please try again.");
     }
-  }
+  };
 
   const printReceipt = async (billData) => {
     try {
-      console.log('Printing receipt for bill:', billData)
-      
+      console.log("Printing receipt for bill:", billData);
+
       // First, populate the receipt element with the bill data
-      populateReceiptElement(billData)
-      
-      const receiptElement = document.getElementById('receipt-print-history')
+      populateReceiptElement(billData);
+
+      const receiptElement = document.getElementById("receipt-print-history");
       if (!receiptElement) {
-        console.error('Receipt element not found')
-        alert('Receipt element not found. Please try again.')
-        return
+        console.error("Receipt element not found");
+        alert("Receipt element not found. Please try again.");
+        return;
       }
-      
+
       // Create a new print window with only the receipt content
-      const printWindow = window.open('', '_blank', 'width=300,height=600')
+      const printWindow = window.open("", "_blank", "width=300,height=600");
       if (printWindow) {
         // Get the receipt HTML content
-        const receiptContent = receiptElement.innerHTML
-        
+        const receiptContent = receiptElement.innerHTML;
+
         // Create a clean HTML document for printing
         printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Receipt Print - Bill #${billData.bill_no}</title>
-            <style>
-              @media print {
-                body {
-                  width: 58mm !important;
-                  margin: 0 !important;
-                  padding: 2mm !important;
-                  font-family: Arial, sans-serif !important;
-                  font-size: 12px !important;
-                  line-height: 1.2 !important;
-                  background: white !important;
-                  color: black !important;
-                }
-                
-                table {
-                  border-collapse: collapse !important;
-                  width: 100% !important;
-                  font-size: 11px !important;
-                }
-                
-                th, td {
-                  border: 1px solid black !important;
-                  padding: 1mm !important;
-                  text-align: left !important;
-                }
-                
-                th {
-                  font-weight: bold !important;
-                  background-color: #f3f4f6 !important;
-                }
-                
-                h1 {
-                  font-size: 14px !important;
-                  margin: 2mm 0 !important;
-                  font-weight: bold !important;
-                  text-align: center !important;
-                }
-                
-                p {
-                  font-size: 12px !important;
-                  margin: 1mm 0 !important;
-                  text-align: center !important;
-                }
-                
-                .receipt-container {
-                  width: 58mm !important;
-                  max-width: 58mm !important;
-                  margin: 0 auto !important;
-                }
-                
-                img {
-                  max-width: 100% !important;
-                  height: auto !important;
-                }
-              }
-              
-              /* Screen styles for preview */
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt Print - Bill #${billData.bill_no}</title>
+          <style>
+            @media print {
               body {
-                width: 58mm;
-                margin: 0 auto;
-                padding: 2mm;
-                font-family: Arial, sans-serif;
-                font-size: 12px;
-                line-height: 1.2;
-                background: white;
-                color: black;
-                border: 1px solid #ccc;
+                width: 148mm !important;
+                height: 210mm !important;
+                margin: 0 !important;
+                padding: 4mm !important;
+                font-family: Arial, sans-serif !important;
+                font-size: 14px !important;
+                line-height: 1.4 !important;
+                background: white !important;
+                color: black !important;
               }
               
-              .receipt-container {
-                width: 58mm;
-                max-width: 58mm;
-                margin: 0 auto;
+              .print-controls {
+                display: none !important;
               }
               
               table {
-                border-collapse: collapse;
-                width: 100%;
-                font-size: 11px;
+                border-collapse: collapse !important;
+                width: 100% !important;
+                font-size: 14px !important;
               }
               
               th, td {
-                border: 1px solid black;
-                padding: 1mm;
-                text-align: left;
+                border: 1px solid black !important;
+                padding: 2mm !important;
+                text-align: left !important;
               }
               
               th {
-                font-weight: bold;
-                background-color: #f3f4f6;
+                font-weight: bold !important;
+                background-color: #f3f4f6 !important;
               }
               
               h1 {
-                font-size: 14px;
-                margin: 2mm 0;
-                font-weight: bold;
-                text-align: center;
+                font-size: 18px !important;
+                margin: 3mm 0 !important;
+                font-weight: bold !important;
+                text-align: center !important;
               }
               
               p {
-                font-size: 12px;
-                margin: 1mm 0;
-                text-align: center;
+                font-size: 14px !important;
+                margin: 2mm 0 !important;
+                text-align: center !important;
+              }
+              
+              .receipt-container {
+                width: 148mm !important;
+                max-width: 148mm !important;
+                margin: 0 auto !important;
               }
               
               img {
-                max-width: 100%;
-                height: auto;
+                max-width: 100% !important;
+                height: auto !important;
               }
-              
-              .print-button {
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                background: #007bff;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 14px;
-              }
-              
-              .print-button:hover {
-                background: #0056b3;
-              }
-            </style>
-          </head>
-          <body>
+            }
+            
+            /* Screen styles for preview */
+            body {
+              width: 148mm;
+              height: 210mm;
+              margin: 0 auto;
+              padding: 4mm;
+              font-family: Arial, sans-serif;
+              font-size: 14px;
+              line-height: 1.4;
+              background: white;
+              color: black;
+              border: 1px solid #ccc;
+            }
+            
+            .print-controls {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              z-index: 1000;
+            }
+            
+            .print-button {
+              background: #007bff;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 14px;
+              margin-right: 10px;
+            }
+            
+            .print-button:hover {
+              background: #0056b3;
+            }
+            
+            .cancel-button {
+              background: #dc3545;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 14px;
+            }
+            
+            .cancel-button:hover {
+              background: #c82333;
+            }
+            
+            .receipt-container {
+              width: 148mm;
+              max-width: 148mm;
+              margin: 0 auto;
+            }
+            
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              font-size: 14px;
+            }
+            
+            th, td {
+              border: 1px solid black;
+              padding: 2mm;
+              text-align: left;
+            }
+            
+            th {
+              font-weight: bold;
+              background-color: #f3f4f6;
+            }
+            
+            h1 {
+              font-size: 18px;
+              margin: 3mm 0;
+              font-weight: bold;
+              text-align: center;
+            }
+            
+            p {
+              font-size: 14px;
+              margin: 2mm 0;
+              text-align: center;
+            }
+            
+            img {
+              max-width: 100%;
+              height: auto;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-controls">
             <button class="print-button" onclick="window.print()">🖨️ Print Receipt</button>
-            <button onclick="window.close()">Cancel</button>
-            <div class="receipt-container">
-              ${receiptContent}
-            </div>
-          </body>
-          </html>
-        `)
-        
-        printWindow.document.close()
-        
+            <button class="cancel-button" onclick="window.close()">Cancel</button>
+          </div>
+          <div class="receipt-container">
+            ${receiptContent}
+          </div>
+        </body>
+        </html>
+      `);
+
+        printWindow.document.close();
+
         // Wait for content to load then focus the window
         printWindow.onload = () => {
-          printWindow.focus()
-        }
-        
+          printWindow.focus();
+        };
       } else {
         // Fallback if popup is blocked - show print modal instead
-        setPrintBillData(billData)
-        setShowPrintModal(true)
+        setPrintBillData(billData);
+        setShowPrintModal(true);
       }
-      
     } catch (error) {
-      console.error('Error printing receipt:', error)
-      alert('Error printing receipt. Please try again.')
+      console.error("Error printing receipt:", error);
+      alert("Error printing receipt. Please try again.");
     }
-  }
+  };
 
   // Alternative print method using modal
   const openPrintModal = (billData) => {
-    setPrintBillData(billData)
-    setShowPrintModal(true)
-  }
+    setPrintBillData(billData);
+    setShowPrintModal(true);
+  };
 
   const closePrintModal = () => {
-    setShowPrintModal(false)
-    setPrintBillData(null)
-  }
+    setShowPrintModal(false);
+    setPrintBillData(null);
+  };
 
   const printFromModal = () => {
     if (printBillData) {
-      populateReceiptElement(printBillData)
-      window.print()
+      populateReceiptElement(printBillData);
+      window.print();
     }
-  }
+  };
 
   const downloadStoredPDF = (pdfUrl, billData) => {
     if (!pdfUrl) {
-      alert('No PDF available for this bill. Please regenerate the PDF.')
-      return
+      alert("No PDF available for this bill. Please regenerate the PDF.");
+      return;
     }
 
     // Create a download link for the stored PDF
-    const link = document.createElement('a')
-    link.href = pdfUrl
-    link.download = `bill_${billData.bill_no}_${billData.customer_name || 'customer'}.pdf`
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.download = `bill_${billData.bill_no}_${
+      billData.customer_name || "customer"
+    }.pdf`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const deleteBill = async (billId) => {
     try {
-      setDeleting(true)
-      const { error } = await supabase
-        .from('bills')
-        .delete()
-        .eq('id', billId)
+      setDeleting(true);
+      const { error } = await supabase.from("bills").delete().eq("id", billId);
 
-      if (error) throw error
+      if (error) throw error;
 
       // Remove from local state
-      setBills(prevBills => prevBills.filter(bill => bill.id !== billId))
-      setFilteredBills(prevBills => prevBills.filter(bill => bill.id !== billId))
-      
+      setBills((prevBills) => prevBills.filter((bill) => bill.id !== billId));
+      setFilteredBills((prevBills) =>
+        prevBills.filter((bill) => bill.id !== billId)
+      );
+
       // Close modals
-      setShowDeleteModal(false)
-      setBillToDelete(null)
-      setDeleteMode(false)
-      setSelectedBills([])
-      
-      console.log('Bill deleted successfully')
+      setShowDeleteModal(false);
+      setBillToDelete(null);
+      setDeleteMode(false);
+      setSelectedBills([]);
+
+      console.log("Bill deleted successfully");
     } catch (error) {
-      console.error('Error deleting bill:', error)
-      alert('Error deleting bill. Please try again.')
+      console.error("Error deleting bill:", error);
+      alert("Error deleting bill. Please try again.");
     } finally {
-      setDeleting(false)
+      setDeleting(false);
     }
-  }
+  };
 
   const deleteMultipleBills = async () => {
-    if (selectedBills.length === 0) return
+    if (selectedBills.length === 0) return;
 
     try {
-      setDeleting(true)
-      
+      setDeleting(true);
+
       // Delete bills one by one
       for (const billId of selectedBills) {
         const { error } = await supabase
-          .from('bills')
+          .from("bills")
           .delete()
-          .eq('id', billId)
+          .eq("id", billId);
 
-        if (error) throw error
+        if (error) throw error;
       }
 
       // Remove from local state
-      setBills(prevBills => prevBills.filter(bill => !selectedBills.includes(bill.id)))
-      setFilteredBills(prevBills => prevBills.filter(bill => !selectedBills.includes(bill.id)))
-      
+      setBills((prevBills) =>
+        prevBills.filter((bill) => !selectedBills.includes(bill.id))
+      );
+      setFilteredBills((prevBills) =>
+        prevBills.filter((bill) => !selectedBills.includes(bill.id))
+      );
+
       // Close delete mode
-      setDeleteMode(false)
-      setSelectedBills([])
-      
-      console.log(`${selectedBills.length} bills deleted successfully`)
+      setDeleteMode(false);
+      setSelectedBills([]);
+
+      console.log(`${selectedBills.length} bills deleted successfully`);
     } catch (error) {
-      console.error('Error deleting bills:', error)
-      alert('Error deleting bills. Please try again.')
+      console.error("Error deleting bills:", error);
+      alert("Error deleting bills. Please try again.");
     } finally {
-      setDeleting(false)
+      setDeleting(false);
     }
-  }
+  };
 
   const toggleDeleteMode = () => {
-    setDeleteMode(!deleteMode)
-    setSelectedBills([])
-  }
+    setDeleteMode(!deleteMode);
+    setSelectedBills([]);
+  };
 
   const toggleBillSelection = (billId) => {
-    setSelectedBills(prev => 
-      prev.includes(billId) 
-        ? prev.filter(id => id !== billId)
+    setSelectedBills((prev) =>
+      prev.includes(billId)
+        ? prev.filter((id) => id !== billId)
         : [...prev, billId]
-    )
-  }
+    );
+  };
 
   const selectAllBills = () => {
-    setSelectedBills(filteredBills.map(bill => bill.id))
-  }
+    setSelectedBills(filteredBills.map((bill) => bill.id));
+  };
 
   const deselectAllBills = () => {
-    setSelectedBills([])
-  }
+    setSelectedBills([]);
+  };
 
   const confirmDeleteBill = (bill) => {
-    setBillToDelete(bill)
-    setShowDeleteModal(true)
-  }
+    setBillToDelete(bill);
+    setShowDeleteModal(true);
+  };
 
   const closeDeleteModal = () => {
-    setShowDeleteModal(false)
-    setBillToDelete(null)
-  }
+    setShowDeleteModal(false);
+    setBillToDelete(null);
+  };
 
   if (loading) {
     return (
@@ -733,70 +797,83 @@ export default function HistoryPage() {
           <p className="text-gray-600">Loading bills...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <ProtectedRoute>
       <div className="space-y-6 pb-24">
-
         {/* Page Title */}
         <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-6 sm:py-8 rounded-lg shadow-lg mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-4xl font-bold mb-2">Bill History</h1>
-          <p className="text-blue-100 text-sm sm:text-lg">View and manage all your bills</p>
+          <p className="text-blue-100 text-sm sm:text-lg">
+            View and manage all your bills
+          </p>
         </div>
 
         {/* Date Filter Section */}
         <div className="bg-white rounded-xl shadow-lg border-0 mb-6">
           <div className="p-4 sm:p-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="w-5 h-5 mr-2 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               Filter by Date
             </h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Quick Date Filters */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Quick Filters</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Quick Filters
+                </label>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => setDateFilter('all')}
+                    onClick={() => setDateFilter("all")}
                     className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                      dateFilter === 'all'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      dateFilter === "all"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     All Time
                   </button>
                   <button
-                    onClick={() => setDateFilter('today')}
+                    onClick={() => setDateFilter("today")}
                     className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                      dateFilter === 'today'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      dateFilter === "today"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     Today
                   </button>
                   <button
-                    onClick={() => setDateFilter('week')}
+                    onClick={() => setDateFilter("week")}
                     className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                      dateFilter === 'week'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      dateFilter === "week"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     This Week
                   </button>
                   <button
-                    onClick={() => setDateFilter('month')}
+                    onClick={() => setDateFilter("month")}
                     className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                      dateFilter === 'month'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      dateFilter === "month"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     This Month
@@ -806,7 +883,9 @@ export default function HistoryPage() {
 
               {/* Custom Date Range */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Custom Range</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Custom Range
+                </label>
                 <div className="flex space-x-2">
                   <input
                     type="date"
@@ -824,12 +903,12 @@ export default function HistoryPage() {
                   />
                 </div>
                 <button
-                  onClick={() => setDateFilter('custom')}
+                  onClick={() => setDateFilter("custom")}
                   disabled={!customStartDate || !customEndDate}
                   className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     customStartDate && customEndDate
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
                 >
                   Apply Custom Filter
@@ -838,15 +917,18 @@ export default function HistoryPage() {
 
               {/* Filter Summary */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Results</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Results
+                </label>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">{filteredBills.length}</span> bills found
+                    <span className="font-medium">{filteredBills.length}</span>{" "}
+                    bills found
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     {getDateFilterLabel()}
                   </div>
-                  {dateFilter !== 'all' && (
+                  {dateFilter !== "all" && (
                     <button
                       onClick={clearDateFilter}
                       className="mt-2 w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
@@ -868,7 +950,7 @@ export default function HistoryPage() {
               Bills ({filteredBills.length})
             </h2>
             <div className="flex items-center space-x-3">
-              {dateFilter !== 'all' && (
+              {dateFilter !== "all" && (
                 <div className="text-sm text-gray-600">
                   Showing {filteredBills.length} of {bills.length} total bills
                 </div>
@@ -878,11 +960,11 @@ export default function HistoryPage() {
                   onClick={toggleDeleteMode}
                   className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                     deleteMode
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-gray-600 text-white hover:bg-gray-700'
+                      ? "bg-red-600 text-white hover:bg-red-700"
+                      : "bg-gray-600 text-white hover:bg-gray-700"
                   }`}
                 >
-                  {deleteMode ? 'Cancel Delete' : 'Delete Bills'}
+                  {deleteMode ? "Cancel Delete" : "Delete Bills"}
                 </button>
               )}
             </div>
@@ -897,15 +979,22 @@ export default function HistoryPage() {
                     <input
                       type="checkbox"
                       checked={selectedBills.length === filteredBills.length}
-                      onChange={selectedBills.length === filteredBills.length ? deselectAllBills : selectAllBills}
+                      onChange={
+                        selectedBills.length === filteredBills.length
+                          ? deselectAllBills
+                          : selectAllBills
+                      }
                       className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                     />
                     <span className="text-sm font-medium text-red-800">
-                      {selectedBills.length === filteredBills.length ? 'Deselect All' : 'Select All'}
+                      {selectedBills.length === filteredBills.length
+                        ? "Deselect All"
+                        : "Select All"}
                     </span>
                   </div>
                   <span className="text-sm text-red-600">
-                    {selectedBills.length} of {filteredBills.length} bills selected
+                    {selectedBills.length} of {filteredBills.length} bills
+                    selected
                   </span>
                 </div>
                 <div className="flex space-x-2">
@@ -914,7 +1003,11 @@ export default function HistoryPage() {
                     disabled={selectedBills.length === 0 || deleting}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
                   >
-                    {deleting ? 'Deleting...' : `Delete ${selectedBills.length} Bill${selectedBills.length !== 1 ? 's' : ''}`}
+                    {deleting
+                      ? "Deleting..."
+                      : `Delete ${selectedBills.length} Bill${
+                          selectedBills.length !== 1 ? "s" : ""
+                        }`}
                   </button>
                   <button
                     onClick={toggleDeleteMode}
@@ -930,23 +1023,47 @@ export default function HistoryPage() {
           {filteredBills.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="w-12 h-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                {bills.length === 0 ? 'No Bills Found' : `No Bills Found for ${getDateFilterLabel()}`}
+                {bills.length === 0
+                  ? "No Bills Found"
+                  : `No Bills Found for ${getDateFilterLabel()}`}
               </h2>
               <p className="text-gray-600 mb-6">
-                {bills.length === 0 
+                {bills.length === 0
                   ? "You haven't created any bills yet."
-                  : `No bills found within the selected date range.`
-                }
+                  : `No bills found within the selected date range.`}
               </p>
               {bills.length === 0 ? (
-                <a href="/" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <a
+                  href="/"
+                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg"
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
                   </svg>
                   Create Your First Bill
                 </a>
@@ -955,8 +1072,18 @@ export default function HistoryPage() {
                   onClick={clearDateFilter}
                   className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg"
                 >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                   Clear Filter
                 </button>
@@ -965,12 +1092,12 @@ export default function HistoryPage() {
           ) : (
             <div className="space-y-2">
               {filteredBills.map((bill) => (
-                <div 
-                  key={bill.id} 
+                <div
+                  key={bill.id}
                   className={`card bg-white shadow-md border-0 rounded-lg transition-all duration-200 ${
-                    deleteMode 
-                      ? 'cursor-default hover:shadow-md' 
-                      : 'cursor-pointer hover:shadow-lg hover:bg-gray-50'
+                    deleteMode
+                      ? "cursor-default hover:shadow-md"
+                      : "cursor-pointer hover:shadow-lg hover:bg-gray-50"
                   }`}
                   onClick={deleteMode ? undefined : () => viewBillDetails(bill)}
                 >
@@ -992,37 +1119,55 @@ export default function HistoryPage() {
                         </span>
                         <div className="text-left">
                           <h3 className="font-medium text-gray-900 text-sm truncate max-w-32">
-                            {bill.customer_name || 'No Customer Name'}
+                            {bill.customer_name || "No Customer Name"}
                           </h3>
-                          <p className="text-xs text-gray-500">{formatDate(bill.created_at)}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatDate(bill.created_at)}
+                          </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3">
                         <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">₹{bill.total_price.toFixed(2)}</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            ₹{bill.total_price.toFixed(2)}
+                          </p>
                           <div className="flex items-center justify-end space-x-2 mt-1">
                             <span className="text-xs text-gray-600">
-                              {bill.items.length} item{bill.items.length !== 1 ? 's' : ''}
+                              {bill.items.length} item
+                              {bill.items.length !== 1 ? "s" : ""}
                             </span>
                             {bill.pdf_url && (
-                              <span className="w-2 h-2 bg-green-500 rounded-full" title="PDF Available"></span>
+                              <span
+                                className="w-2 h-2 bg-green-500 rounded-full"
+                                title="PDF Available"
+                              ></span>
                             )}
                           </div>
                         </div>
-                        
+
                         {/* Delete Button */}
                         {deleteMode && (
                           <button
                             onClick={(e) => {
-                              e.stopPropagation()
-                              confirmDeleteBill(bill)
+                              e.stopPropagation();
+                              confirmDeleteBill(bill);
                             }}
                             className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
                             title="Delete this bill"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                           </button>
                         )}
@@ -1041,7 +1186,9 @@ export default function HistoryPage() {
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 pb-[80px]">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Bill Details #{selectedBill.bill_no}</h3>
+                  <h3 className="text-lg font-semibold">
+                    Bill Details #{selectedBill.bill_no}
+                  </h3>
                   <button
                     onClick={closeBillDetails}
                     className="text-gray-400 hover:text-gray-600 text-xl font-bold"
@@ -1049,56 +1196,76 @@ export default function HistoryPage() {
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-gray-700">Bill No:</span>
+                      <span className="font-medium text-gray-700">
+                        Bill No:
+                      </span>
                       <p className="text-gray-900">#{selectedBill.bill_no}</p>
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Date:</span>
-                      <p className="text-gray-900">{formatDate(selectedBill.created_at)}</p>
+                      <p className="text-gray-900">
+                        {formatDate(selectedBill.created_at)}
+                      </p>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-700">Customer:</span>
-                      <p className="text-gray-900">{selectedBill.customer_name || 'No Customer Name'}</p>
+                      <span className="font-medium text-gray-700">
+                        Customer:
+                      </span>
+                      <p className="text-gray-900">
+                        {selectedBill.customer_name || "No Customer Name"}
+                      </p>
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Total:</span>
-                      <p className="text-gray-900 font-semibold">₹{selectedBill.total_price.toFixed(2)}</p>
+                      <p className="text-gray-900 font-semibold">
+                        ₹{selectedBill.total_price.toFixed(2)}
+                      </p>
                     </div>
                   </div>
-                  
+
                   {selectedBill.pdf_url && (
                     <div className="bg-green-50 p-3 rounded-lg">
                       <p className="text-sm text-green-800">
-                        <strong>PDF Available:</strong> This bill has a stored PDF that can be downloaded anytime.
+                        <strong>PDF Available:</strong> This bill has a stored
+                        PDF that can be downloaded anytime.
                       </p>
                     </div>
                   )}
-                  
+
                   <div>
                     <h4 className="font-medium text-gray-700 mb-2">Items:</h4>
                     <div className="space-y-2">
                       {selectedBill.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div
+                          key={index}
+                          className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                        >
                           <div>
-                            <span className="font-medium">{item.product_name}</span>
+                            <span className="font-medium">
+                              {item.product_name}
+                            </span>
                             <span className="text-gray-600 ml-2">
                               Qty: {item.quantity} × ₹{item.price}
                             </span>
                           </div>
-                          <span className="font-semibold">₹{item.subtotal.toFixed(2)}</span>
+                          <span className="font-semibold">
+                            ₹{item.subtotal.toFixed(2)}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-3 pt-6 pb-2">
                     {selectedBill.pdf_url ? (
                       <button
-                        onClick={() => downloadStoredPDF(selectedBill.pdf_url, selectedBill)}
+                        onClick={() =>
+                          downloadStoredPDF(selectedBill.pdf_url, selectedBill)
+                        }
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                       >
                         Download Stored PDF
@@ -1136,7 +1303,9 @@ export default function HistoryPage() {
             <div className="bg-white rounded-lg max-w-md w-full">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Print Receipt #{printBillData.bill_no}</h3>
+                  <h3 className="text-lg font-semibold">
+                    Print Receipt #{printBillData.bill_no}
+                  </h3>
                   <button
                     onClick={closePrintModal}
                     className="text-gray-400 hover:text-gray-600 text-xl font-bold"
@@ -1144,22 +1313,31 @@ export default function HistoryPage() {
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="text-center">
                     <p className="text-gray-600 mb-4">
-                      Click the button below to print this receipt. The receipt will be formatted specifically for printing.
+                      Click the button below to print this receipt. The receipt
+                      will be formatted specifically for printing.
                     </p>
-                    
+
                     <div className="bg-gray-50 p-4 rounded-lg mb-4">
                       <div className="text-sm text-gray-700">
-                        <p><strong>Bill No:</strong> #{printBillData.bill_no}</p>
-                        <p><strong>Customer:</strong> {printBillData.customer_name || 'No Customer Name'}</p>
-                        <p><strong>Total:</strong> ₹{printBillData.total_price.toFixed(2)}</p>
+                        <p>
+                          <strong>Bill No:</strong> #{printBillData.bill_no}
+                        </p>
+                        <p>
+                          <strong>Customer:</strong>{" "}
+                          {printBillData.customer_name || "No Customer Name"}
+                        </p>
+                        <p>
+                          <strong>Total:</strong> ₹
+                          {printBillData.total_price.toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-3">
                     <button
                       onClick={printFromModal}
@@ -1186,7 +1364,9 @@ export default function HistoryPage() {
             <div className="bg-white rounded-lg max-w-md w-full">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-red-600">Confirm Delete</h3>
+                  <h3 className="text-lg font-semibold text-red-600">
+                    Confirm Delete
+                  </h3>
                   <button
                     onClick={closeDeleteModal}
                     className="text-gray-400 hover:text-gray-600 text-xl font-bold"
@@ -1194,37 +1374,56 @@ export default function HistoryPage() {
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      <svg
+                        className="w-8 h-8 text-red-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
                       </svg>
                     </div>
-                    
+
                     <h4 className="text-lg font-semibold text-gray-900 mb-2">
                       Delete Bill #{billToDelete.bill_no}?
                     </h4>
-                    
+
                     <p className="text-gray-600 mb-4">
-                      This action cannot be undone. The bill and all its data will be permanently deleted.
+                      This action cannot be undone. The bill and all its data
+                      will be permanently deleted.
                     </p>
-                    
+
                     <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
-                      <p><strong>Customer:</strong> {billToDelete.customer_name || 'No Customer Name'}</p>
-                      <p><strong>Total:</strong> ₹{billToDelete.total_price.toFixed(2)}</p>
-                      <p><strong>Items:</strong> {billToDelete.items.length}</p>
+                      <p>
+                        <strong>Customer:</strong>{" "}
+                        {billToDelete.customer_name || "No Customer Name"}
+                      </p>
+                      <p>
+                        <strong>Total:</strong> ₹
+                        {billToDelete.total_price.toFixed(2)}
+                      </p>
+                      <p>
+                        <strong>Items:</strong> {billToDelete.items.length}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-3">
                     <button
                       onClick={() => deleteBill(billToDelete.id)}
                       disabled={deleting}
                       className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
                     >
-                      {deleting ? 'Deleting...' : 'Delete Bill'}
+                      {deleting ? "Deleting..." : "Delete Bill"}
                     </button>
                     <button
                       onClick={closeDeleteModal}
@@ -1240,58 +1439,76 @@ export default function HistoryPage() {
         )}
 
         {/* Hidden Receipt for Printing */}
-        <div id="receipt-print-history" className="hidden fixed top-0 left-0 w-[58mm] p-2 bg-white text-black z-[-1]">
-          <div className="w-[58mm] p-2">
+        <div
+          id="receipt-print-history"
+          className="hidden fixed top-0 left-0 w-[148mm] h-[210mm] p-4 bg-white text-black z-[-1]"
+        >
+          <div className="w-[148mm] h-[210mm] p-4">
             {/* Logo */}
-            <div className="flex justify-center mb-1" style={{ display: 'flex', justifyContent: 'center' }}>
-              <img src="apple-touch-icon.png" height={50} width={50} alt="Logo" />
+            <div
+              className="flex justify-center mb-2"
+              style={{ display: "flex", justifyContent: "center" }}
+            >
+              <img
+                src="apple-touch-icon.png"
+                height={60}
+                width={60}
+                alt="Logo"
+              />
             </div>
 
             {/* Shop info */}
-            <h1 className="text-center font-bold text-lg leading-tight">
+            <h1 className="text-center font-bold text-2xl leading-tight mb-1">
               Kiran Beauty Shop
             </h1>
-            <p className="text-center text-[11px] leading-tight">
-              Since 1992
-            </p>
-            <p className="text-center text-xs mb-2">
+            <p className="text-center text-sm leading-tight mb-1">Since 1992</p>
+            <p className="text-center text-base mb-4">
               — Shine with Elegance —
             </p>
 
-            {/* Bill info row */}
-            <div className="flex justify-between items-start text-xs">
-              {/* left column (stacked) */}
-              <div className="flex flex-col gap-[2px] text-left">
-                <span>Bill No: #<span id="receipt-bill-no">-</span></span>
-                
+            <div className="text-sm mb-3">
+              {/* First row: Bill No + Mo */}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span className="font-semibold">
+                  Bill No: #<span id="receipt-bill-no">-</span>
+                </span>
+                <span className="text-right">Mo.: 8000544966</span>
               </div>
-              <span>Date: <span id="receipt-date">-</span></span>
-              {/* right only mobile */}
-              <div className="text-right">Mo.: 8000544966</div>
-            </div>
-            <div className="text-xs mb-2">
-              <span>Customer: <span id="receipt-customer">-</span></span>
+
+              {/* Second row: Date */}
+              <div className="mt-1">
+                <span>
+                  Date: <span id="receipt-date">-</span>
+                </span>
+              </div>
+
+              {/* Third row: Customer */}
+              <div className="mt-1">
+                <span className="font-semibold">
+                  Customer: <span id="receipt-customer">-</span>
+                </span>
+              </div>
             </div>
 
             {/* Items table */}
-            <table className="w-full text-xs border-collapse pt-2 mb-3 pb-2">
+            <table className="w-full text-sm border-collapse mb-4">
               <thead>
-                <tr className="border-b border-black">
-                  <th className="text-left py-1">Item</th>
-                  <th className="text-center py-1">Qty</th>
-                  <th className="text-right py-1">Price</th>
-                  <th className="text-right py-1">Subtotal</th>
+                <tr className="border-b-2 border-black">
+                  <th className="text-left py-2 px-2">Item</th>
+                  <th className="text-center py-2 px-2">Qty</th>
+                  <th className="text-right py-2 px-2">Price</th>
+                  <th className="text-right py-2 px-2">Subtotal</th>
                 </tr>
               </thead>
               <tbody id="receipt-items">
                 {/* Items will be populated dynamically */}
               </tbody>
               <tfoot>
-                <tr className="border-t border-black">
-                  <td colSpan={3} className="text-right font-bold py-1 pr-1">
+                <tr className="border-t-2 border-black">
+                  <td colSpan={3} className="text-right font-bold py-3 px-2">
                     Total
                   </td>
-                  <td className="text-right font-bold py-1">
+                  <td className="text-right font-bold py-3 px-2">
                     ₹<span id="receipt-total">-</span>
                   </td>
                 </tr>
@@ -1299,32 +1516,28 @@ export default function HistoryPage() {
             </table>
 
             {/* Fixed notes */}
-            <div className="text-xs text-center mb-4">
-              <p>✨ Fixed Rate ✨</p>
-              <p>🚫 No Return</p>
-              <p>🚫 No Replacement</p>
+            <div className="text-sm text-center mb-6">
+              <p className="font-semibold mb-1">✨ Fixed Rate ✨</p>
+              <p className="mb-1">🚫 No Return</p>
+              <p className="mb-1">🚫 No Replacement</p>
             </div>
 
             {/* QR Code */}
-            <div className="flex justify-center mt-2 mb-2">
+            <div className="flex justify-center mb-4">
               {/* replace with your dynamic QR if needed */}
-              <img
-                src="/qr.png"
-                alt="UPI QR"
-                className="w-24 h-24"
-              />
+              <img src="/qr.png" alt="UPI QR" className="w-32 h-32" />
               {/* or mount a <canvas id="qrCanvas" /> here */}
             </div>
 
             {/* Thank you */}
-            <p className="text-center text-xs mt-1">
+            <p className="text-center text-sm font-semibold mb-1">
               ✨ Thank you for shopping with us ✨
             </p>
-            <p className="text-center text-xs">Visit Again 💖</p>
+            <p className="text-center text-sm">Visit Again 💖</p>
           </div>
         </div>
       </div>
       <BottomNav />
     </ProtectedRoute>
-  )
-} 
+  );
+}

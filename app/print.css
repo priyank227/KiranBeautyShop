@@ -1,13 +1,14 @@
 /* Print styles for receipt */
 @media print {
   body {
-    width: 58mm !important;
-    font-size: 12px !important;
+    width: 148mm !important;
+    height: 210mm !important;
+    font-size: 14px !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     color: black !important;
-    line-height: 1.2 !important;
+    line-height: 1.4 !important;
   }
 
   /* Hide everything by default */
@@ -20,9 +21,10 @@
   #receipt-print-history {
     visibility: visible !important;
     position: relative !important;
-    width: 58mm !important;
+    width: 148mm !important;
+    height: 210mm !important;
     margin: 0 auto !important;
-    padding: 2mm !important;
+    padding: 4mm !important;
     background: white !important;
     color: black !important;
     border: none !important;
@@ -42,12 +44,12 @@
   table {
     border-collapse: collapse !important;
     width: 100% !important;
-    font-size: 11px !important;
+    font-size: 14px !important;
   }
 
   th, td {
     border: 1px solid black !important;
-    padding: 1mm !important;
+    padding: 2mm !important;
     text-align: left !important;
   }
 
@@ -58,14 +60,14 @@
 
   /* Headings */
   h1, h2, h3 {
-    font-size: 14px !important;
-    margin: 2mm 0 !important;
+    font-size: 18px !important;
+    margin: 3mm 0 !important;
     font-weight: bold !important;
   }
 
   p, span, div {
-    font-size: 12px !important;
-    margin: 1mm 0 !important;
+    font-size: 14px !important;
+    margin: 2mm 0 !important;
   }
 
   /* Page break - removed to prevent multiple pages */
@@ -78,5 +80,11 @@
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* A5 specific print settings */
+  @page {
+    size: A5 !important;
+    margin: 0 !important;
   }
 }
