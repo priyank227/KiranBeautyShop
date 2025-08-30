@@ -7,6 +7,8 @@ import html2canvas from "html2canvas";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BottomNav from "./components/BottomNav";
 import { useAuth } from "./contexts/AuthContext";
+import QRCode from "qrcode";
+import ReceiptQR from "./components/ReceiptQR";
 
 export default function HomePage() {
   const { username, logout } = useAuth();
@@ -177,59 +179,6 @@ export default function HomePage() {
     setSearchTerm("");
   };
 
-  const testReceiptDisplay = () => {
-    // Create a test bill for demonstration
-    const testBill = {
-      bill_no: "TEST001",
-      created_at: new Date().toISOString(),
-      customer_name: "Test Customer",
-      items: [
-        {
-          product_name: "Test Product 1",
-          quantity: 2,
-          price: 100,
-          subtotal: 200,
-        },
-        {
-          product_name: "Test Product 2",
-          quantity: 1,
-          price: 150,
-          subtotal: 150,
-        },
-      ],
-      total_price: 350,
-    };
-
-    const receiptElement = document.getElementById("receipt-print-test");
-    if (receiptElement) {
-      receiptElement.classList.remove("hidden");
-      receiptElement.style.position = "fixed";
-      receiptElement.style.top = "50px";
-      receiptElement.style.left = "50px";
-      receiptElement.style.zIndex = "9999";
-      receiptElement.style.visibility = "visible";
-      receiptElement.style.backgroundColor = "white";
-      receiptElement.style.border = "2px solid black";
-      receiptElement.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-      console.log("Test receipt element shown");
-
-      // Hide after 5 seconds
-      setTimeout(() => {
-        receiptElement.classList.add("hidden");
-        receiptElement.style.position = "fixed";
-        receiptElement.style.top = "0";
-        receiptElement.style.left = "0";
-        receiptElement.style.zIndex = "-1";
-        receiptElement.style.visibility = "hidden";
-        receiptElement.style.border = "none";
-        receiptElement.style.boxShadow = "none";
-        console.log("Test receipt element hidden again");
-      }, 5000);
-    } else {
-      console.error("Test receipt element not found");
-    }
-  };
-
   const generateDirectPDF = (billData) => {
     try {
       console.log("Generating direct PDF for:", billData);
@@ -301,169 +250,6 @@ export default function HomePage() {
     } catch (error) {
       console.error("Error generating direct PDF:", error);
       throw error;
-    }
-  };
-
-  const testPDFGeneration = async () => {
-    try {
-      console.log("Testing PDF generation...");
-
-      // Create a test bill for demonstration
-      const testBill = {
-        bill_no: "TEST001",
-        created_at: new Date().toISOString(),
-        customer_name: "Test Customer",
-        items: [
-          {
-            product_name: "Test Product 1",
-            quantity: 2,
-            price: 100,
-            subtotal: 200,
-          },
-          {
-            product_name: "Test Product 2",
-            quantity: 1,
-            price: 150,
-            subtotal: 150,
-          },
-        ],
-        total_price: 350,
-      };
-
-      // Try html2canvas method first
-      try {
-        console.log("Attempting html2canvas method...");
-
-        // Generate PDF using the test receipt element
-        const receiptElement = document.getElementById("receipt-print-test");
-        if (!receiptElement) {
-          console.error("Test receipt element not found");
-          return;
-        }
-
-        // Temporarily show the test receipt element with proper positioning
-        receiptElement.classList.remove("hidden");
-        receiptElement.style.position = "absolute";
-        receiptElement.style.top = "0";
-        receiptElement.style.left = "0";
-        receiptElement.style.zIndex = "9999";
-        receiptElement.style.visibility = "visible";
-        receiptElement.style.backgroundColor = "white";
-        receiptElement.style.width = "220px";
-        receiptElement.style.height = "auto";
-        receiptElement.style.overflow = "visible";
-
-        // Force a reflow to ensure the element is properly rendered
-        receiptElement.offsetHeight;
-
-        // Wait for rendering and ensure content is visible
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        console.log("Receipt element dimensions:", {
-          offsetWidth: receiptElement.offsetWidth,
-          offsetHeight: receiptElement.offsetHeight,
-          scrollWidth: receiptElement.scrollWidth,
-          scrollHeight: receiptElement.scrollHeight,
-          clientWidth: receiptElement.clientWidth,
-          clientHeight: receiptElement.clientHeight,
-        });
-
-        // Check if content is actually visible
-        const contentCheck = receiptElement.innerHTML;
-        console.log("Receipt content length:", contentCheck.length);
-        console.log("Receipt content preview:", contentCheck.substring(0, 200));
-
-        console.log("Generating PDF from test receipt...");
-        const canvas = await html2canvas(receiptElement, {
-          width: 560,
-          height: receiptElement.scrollHeight,
-          scale: 1, // Use scale 1 for better compatibility
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          allowTaint: true,
-          foreignObjectRendering: true,
-          logging: true,
-          removeContainer: false,
-          ignoreElements: (element) => {
-            // Don't ignore any elements
-            return false;
-          },
-        });
-
-        // Hide the element again
-        receiptElement.classList.add("hidden");
-        receiptElement.style.position = "fixed";
-        receiptElement.style.zIndex = "-1";
-        receiptElement.style.visibility = "hidden";
-
-        console.log("Canvas generated:", {
-          width: canvas.width,
-          height: canvas.height,
-          dataURL: canvas.toDataURL().substring(0, 100) + "...",
-        });
-
-        // Create PDF
-        const imgData = canvas.toDataURL("image/png", 1.0);
-        console.log("Image data generated, length:", imgData.length);
-
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: [148, receiptElement.scrollHeight * 0.264583],
-        });
-
-        pdf.addImage(
-          imgData,
-          "PNG",
-          0,
-          0,
-          148,
-          receiptElement.scrollHeight * 0.264583
-        );
-
-        // Download the test PDF
-        const pdfBlob = pdf.output("blob");
-        const url = URL.createObjectURL(pdfBlob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "test_receipt_html2canvas.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        console.log("html2canvas PDF generated and downloaded successfully!");
-        alert(
-          "html2canvas PDF generated successfully! Check your downloads folder."
-        );
-      } catch (html2canvasError) {
-        console.log(
-          "html2canvas failed, trying direct method:",
-          html2canvasError
-        );
-
-        // Fallback to direct PDF generation
-        const pdf = generateDirectPDF(testBill);
-
-        // Download the direct PDF
-        const pdfBlob = pdf.output("blob");
-        const url = URL.createObjectURL(pdfBlob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "test_receipt_direct.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        console.log("Direct PDF generated and downloaded successfully!");
-        alert(
-          "Direct PDF generated successfully! Check your downloads folder."
-        );
-      }
-    } catch (error) {
-      console.error("Error testing PDF generation:", error);
-      alert("Error testing PDF generation: " + error.message);
     }
   };
 
@@ -734,7 +520,7 @@ export default function HomePage() {
                 width: 148mm !important;
                 height: 210mm !important;
                 margin: 0 !important;
-                padding: 4mm !important;
+                padding: 2mm !important;
                 font-family: Arial, sans-serif !important;
                 font-size: 14px !important;
                 line-height: 1.4 !important;
@@ -793,13 +579,12 @@ export default function HomePage() {
               width: 148mm;
               height: 210mm;
               margin: 0 auto;
-              padding: 4mm;
+              padding: 2mm;
               font-family: Arial, sans-serif;
               font-size: 14px;
               line-height: 1.4;
               background: white;
               color: black;
-              border: 1px solid #ccc;
             }
             
             .print-controls {
@@ -847,12 +632,16 @@ export default function HomePage() {
             table {
               border-collapse: collapse;
               width: 100%;
-              font-size: 14px;
+              font-size: 13px;
+            }
+            
+            table th{
+             font-size: 14px;
             }
             
             th, td {
               border: 1px solid black;
-              padding: 2mm;
+              padding: 2px !important;
               text-align: left;
             }
             
@@ -936,6 +725,7 @@ export default function HomePage() {
         billData.items.forEach((item, index) => {
           const row = document.createElement("tr");
           row.innerHTML = `
+          <td class="text-center py-[2px]">${index + 1}</td>
           <td class="py-[2px]">${item.product_name}</td>
           <td class="text-center py-[2px]">${item.quantity}</td>
           <td class="text-right py-[2px]">₹${Number(item.price).toFixed(2)}</td>
@@ -947,6 +737,32 @@ export default function HomePage() {
         });
       }
 
+      // Generate QR code
+      const upiId = "q458853545@ybl"; // Your UPI ID
+      const amount = billData.total_price.toFixed(2);
+      const upiUrl = `upi://pay?pa=${upiId}&pn=Kiran%20Beauty%20Shop&am=${50}&cu=INR`;
+
+      QRCode.toDataURL(
+        upiUrl,
+        {
+          width: 150,
+          margin: 1,
+          color: { dark: "#000000", light: "#FFFFFF" },
+        },
+        function (error, url) {
+          if (error) {
+            console.error("QR Code generation error:", error);
+          } else {
+            const qrImg = document.getElementById("qrImage");
+            if (qrImg) {
+              qrImg.src = url; // यहाँ पर QR डाल देंगे
+              qrImg.style.display = "block"; // ensure visible
+            } else {
+              console.warn("QR image element not found in receipt!");
+            }
+          }
+        }
+      );
       console.log("Receipt element populated with bill data:", billData);
     } catch (error) {
       console.error("Error populating receipt element:", error);
@@ -1042,9 +858,8 @@ export default function HomePage() {
                     type="number"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    min="1"
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onChange={(e) => setQuantity(parseInt(e.target.value))}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                   />
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
@@ -1439,8 +1254,8 @@ export default function HomePage() {
 
         {/* Product Selection Modal */}
         {showProductModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-lg h-[85vh] overflow-y-auto shadow-2xl mt-10">
               <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900">
@@ -1610,116 +1425,190 @@ export default function HomePage() {
             id="receipt-print"
             className="hidden fixed top-0 left-0 w-[148mm] h-[210mm] p-4 bg-white text-black z-[-1]"
           >
+            {" "}
             <div className="w-[148mm] h-[210mm] p-4">
-              {/* Logo */}
+              {" "}
+              {/* First line: Since 1992 + KHODALDHAM + Mo. */}{" "}
               <div
-                className="flex justify-center mb-2"
-                style={{ display: "flex", justifyContent: "center" }}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  paddingBottom: "10px",
+                }}
+              >
+                {" "}
+                <span>Since 1992</span>{" "}
+                <span className="font-bold">KHODALDHAM</span>{" "}
+                <span>Mo.: 8000544966</span>{" "}
+              </div>
+              {/* Second line: Logo + Shop Name */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  paddingBottom: "5px",
+                }}
               >
                 <img
                   src="apple-touch-icon.png"
-                  height={60}
-                  width={60}
+                  height={50}
+                  width={50}
                   alt="Logo"
+                  className="mr-2"
                 />
-              </div>
-
-              {/* Shop info */}
-              <h1 className="text-center font-bold text-2xl leading-tight mb-1">
-                Kiran Beauty Shop
-              </h1>
-              <p className="text-center text-sm leading-tight mb-1">
-                Since 1992
-              </p>
-              <p className="text-center text-base mb-4">
-                — Shine with Elegance —
-              </p>
-
-              <div className="text-sm mb-3">
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                <span
+                  className="font-bold text-2xl"
+                  style={{
+                    paddingTop: "19px",
+                    marginLeft: "-8px",
+                    fontSize: "15px",
+                    fontWeight: "bold",
+                  }}
                 >
-                  <span className="font-semibold">
-                    Bill No: #{currentBill.bill_no}
-                  </span>
-                  <span className="text-right">Mo.: 8000544966</span>
-                </div>
-
-                <div className="mt-1">
-                  <span>
-                    Date:{" "}
-                    {new Date(currentBill.created_at).toLocaleDateString(
-                      "en-IN"
-                    )}
-                  </span>
-                </div>
-
-                <div className="mt-1">
-                  <span className="font-semibold">
-                    Customer: {currentBill.customer_name}
-                  </span>
-                </div>
+                  iran Beauty Shop
+                </span>
               </div>
-
+              {/* Third line: M/s (Customer) + Dt. (Date) */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  paddingBottom: "5px",
+                }}
+              >
+                <span>
+                  M/s:-{" "}
+                  <span className="font-semibold">
+                    {currentBill.customer_name}
+                  </span>
+                </span>
+                <span>
+                  Dt.:-{" "}
+                  {new Date(currentBill.created_at).toLocaleDateString("en-IN")}
+                </span>
+              </div>
+              {/* Fourth line: Bill No */}
+              <div className="text-sm mb-3" style={{ marginBottom: "3px" }}>
+                <span>
+                  No.:-{" "}
+                  <span className="font-semibold">#{currentBill.bill_no}</span>
+                </span>
+              </div>
               {/* Items table */}
-              <table className="w-full text-sm border-collapse mb-4">
+              <table className="w-full text-sm mb-4">
                 <thead>
-                  <tr className="border-b-2 border-black">
-                    <th className="text-left py-2 px-2">Item</th>
-                    <th className="text-center py-2 px-2">Qty</th>
-                    <th className="text-right py-2 px-2">Price</th>
-                    <th className="text-right py-2 px-2">Subtotal</th>
+                  <tr>
+                    <th className="text-left py-2 px-1">Sr.</th>
+                    <th className="text-left py-2 px-1">Item</th>
+                    <th className="text-center py-2 px-1">Qty</th>
+                    <th className="text-right py-2 px-1">Price</th>
+                    <th className="text-right py-2 px-1">Subtotal</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentBill.items.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-300">
-                      <td className="py-2 px-2">{item.product_name}</td>
-                      <td className="text-center py-2 px-2">{item.quantity}</td>
-                      <td className="text-right py-2 px-2">
+                    <tr key={index}>
+                      <td className="py-2 px-1">{index + 1}</td>
+                      <td className="py-2 px-1">{item.product_name}</td>
+                      <td className="text-center py-2 px-1">{item.quantity}</td>
+                      <td className="text-right py-2 px-1">
                         ₹{Number(item.price).toFixed(2)}
                       </td>
-                      <td className="text-right py-2 px-2">
+                      <td className="text-right py-2 px-1">
                         ₹{Number(item.subtotal).toFixed(2)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-black">
-                    <td colSpan={3} className="text-right font-bold py-3 px-2">
+                  <tr>
+                    <td className="py-3 px-1"></td>
+                    <td
+                      colSpan={3}
+                      className="text-right font-bold py-3 px-1"
+                      style={{ fontWeight: "bold" }}
+                    >
                       Total
                     </td>
-                    <td className="text-right font-bold py-3 px-2">
+                    <td
+                      className="text-right font-bold py-3 px-1"
+                      style={{ fontWeight: "bold" }}
+                    >
                       ₹{Number(currentBill.total_price).toFixed(2)}
                     </td>
                   </tr>
                 </tfoot>
               </table>
-
-              {/* Fixed notes */}
-              <div className="text-sm text-center mb-6">
-                <p className="font-semibold mb-1">✨ Fixed Rate ✨</p>
-                <p className="mb-1">🚫 No Return</p>
-                <p className="mb-1">🚫 No Replacement</p>
+              {/* Fixed Rate, No Return, No Replacement */}
+              <div
+                className="text-sm text-center mb-4"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-around",
+                  paddingTop: "20px",
+                }}
+              >
+                <span className="font-semibold mb-1">✨ Fixed Rate ✨</span>
+                <span className="mb-1">🚫 No Return</span>
+                <span>🚫 No Replacement</span>
               </div>
-
               {/* QR Code */}
-              <div className="flex justify-center mb-4">
-                {/* replace with your dynamic QR if needed */}
-                <img
-                  src={currentBill.qr_url || "/qr.png"}
-                  alt="UPI QR"
-                  className="w-32 h-32"
-                />
-                {/* or mount a <canvas id="qrCanvas" /> here */}
+              <div style={{
+                textAlign: "center",
+                marginBottom: "10px",
+                marginTop: "10px",
+              }}>
+                <div style={{ fontSize: "11px", marginBottom: "5px" }}>
+                Scan to pay via UPI
               </div>
-
-              {/* Thank you */}
-              <p className="text-center text-sm font-semibold mb-1">
-                ✨ Thank you for shopping with us ✨
-              </p>
-              <p className="text-center text-sm">Visit Again 💖</p>
+              <div className="mb-4" style={{"display":"flex","justifyContent":"center"}}>
+                <ReceiptQR bill={currentBill} />
+              </div>
+              <div style={{ fontSize: "10px", marginTop: "5px" }}>
+                Payment ID: q458853545@ybl
+              </div>
+              </div>
+              {/* Footer with address and Instagram */}
+              <div
+                className="text-xs"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingTop: "15px",
+                  marginTop: "15px",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "10px",
+                    left: 0,
+                    right: 0,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "12px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ marginRight: "4px" }}>📍</span>
+                    <span>3, Gundawadi, Rajkot - 360002</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ marginRight: "4px" }}>
+                      <img
+                        src="instagram.png"
+                        alt="Instagram"
+                        width="20"
+                        height="20"
+                        style={{ paddingTop: "5px" }}
+                      />
+                    </span>
+                    <span>kiran_beauty_rajkot</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

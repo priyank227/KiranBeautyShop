@@ -7,6 +7,7 @@ import html2canvas from "html2canvas";
 import ProtectedRoute from "../components/ProtectedRoute";
 import BottomNav from "../components/BottomNav";
 import { useAuth } from "../contexts/AuthContext";
+import QRCode from "qrcode";
 
 export default function HistoryPage() {
   const { username, logout } = useAuth();
@@ -147,80 +148,6 @@ export default function HistoryPage() {
     }
   };
 
-  const generateDirectPDF = (billData) => {
-    try {
-      console.log("Generating direct PDF for:", billData);
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      // Set font
-      pdf.setFont("helvetica");
-
-      // Header
-      pdf.setFontSize(18);
-      pdf.text("Kiran Beauty Shop", 105, 20, { align: "center" });
-
-      pdf.setFontSize(12);
-      pdf.text("--- Shine with Elegance ---", 105, 30, { align: "center" });
-
-      // Bill details
-      pdf.setFontSize(10);
-      pdf.text(`Bill No: #${billData.bill_no}`, 20, 50);
-      pdf.text(
-        `Date: ${new Date(billData.created_at).toLocaleDateString("en-IN")}`,
-        20,
-        60
-      );
-      pdf.text(`Customer: ${billData.customer_name}`, 20, 70);
-
-      // Items table header
-      pdf.text("Items:", 20, 90);
-      pdf.line(20, 95, 190, 95); // Header line
-
-      // Table headers
-      pdf.text("Item", 25, 105);
-      pdf.text("Qty", 100, 105);
-      pdf.text("Price", 130, 105);
-      pdf.text("Subtotal", 160, 105);
-
-      pdf.line(20, 110, 190, 110); // Separator line
-
-      let yPosition = 120;
-
-      // Items
-      billData.items.forEach((item, index) => {
-        pdf.text(item.product_name, 25, yPosition);
-        pdf.text(item.quantity.toString(), 100, yPosition);
-        pdf.text(`₹${item.price}`, 130, yPosition);
-        pdf.text(`₹${item.subtotal.toFixed(2)}`, 160, yPosition);
-        yPosition += 15;
-      });
-
-      // Total line
-      pdf.line(20, yPosition + 5, 190, yPosition + 5);
-      pdf.setFontSize(12);
-      pdf.text("Total:", 20, yPosition + 15);
-      pdf.text(`₹${billData.total_price.toFixed(2)}`, 160, yPosition + 15);
-
-      // Footer
-      pdf.setFontSize(10);
-      pdf.text("✨ Thank you for shopping with us ✨", 105, yPosition + 35, {
-        align: "center",
-      });
-      pdf.text("Visit Again 💖", 105, yPosition + 42, { align: "center" });
-
-      console.log("Direct PDF generated successfully");
-      return pdf;
-    } catch (error) {
-      console.error("Error generating direct PDF:", error);
-      throw error;
-    }
-  };
-
   const populateReceiptElement = (billData) => {
     try {
       // Populate bill info
@@ -247,196 +174,54 @@ export default function HistoryPage() {
         billData.items.forEach((item, index) => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td class="py-[2px]">${item.product_name}</td>
-            <td class="text-center py-[2px]">${item.quantity}</td>
-            <td class="text-right py-[2px]">₹${Number(item.price).toFixed(
-              2
-            )}</td>
-            <td class="text-right py-[2px]">₹${Number(item.subtotal).toFixed(
-              2
-            )}</td>
-          `;
+      <td class="text-center py-[2px]">${index + 1}</td>
+      <td class="py-[2px]">${item.product_name}</td>
+      <td class="text-center py-[2px]">${item.quantity}</td>
+      <td class="text-right py-[2px]">₹${Number(item.price).toFixed(2)}</td>
+      <td class="text-right py-[2px]">₹${Number(item.subtotal).toFixed(2)}</td>
+    `;
           itemsElement.appendChild(row);
         });
+      }
+
+      const qrCanvas = document.getElementById("qrCanvas");
+      if (qrCanvas && billData.total_price) {
+        // Static UPI ID (replace with your actual UPI ID)
+        const upiId = "q458853545@ybl"; // Example: 1234567890@ybl
+        const amount = billData.total_price.toFixed(2);
+
+        // UPI payment URL format
+        const upiUrl = `upi://pay?pa=${upiId}&pn=Kiran%20Beauty%20Shop&am=${amount}&cu=INR`;
+
+        // Generate QR code
+        QRCode.toDataURL(
+          upiUrl,
+          {
+            width: 100,
+            margin: 1,
+            color: { dark: "#000000", light: "#FFFFFF" },
+          },
+          function (error, url) {
+            if (error) {
+              console.error("QR Code generation error:", error);
+            } else {
+              // replace canvas with <img>
+              const qrContainer = document.getElementById("qrCanvas");
+              if (qrContainer) {
+                const img = document.createElement("img");
+                img.src = url;
+                img.width = 100;
+                img.height = 100;
+                qrContainer.replaceWith(img);
+              }
+            }
+          }
+        );
       }
 
       console.log("Receipt element populated with bill data:", billData);
     } catch (error) {
       console.error("Error populating receipt element:", error);
-    }
-  };
-
-  const generatePDF = async (billData) => {
-    try {
-      console.log("Starting PDF generation for bill:", billData);
-
-      // First, populate the receipt element with the bill data
-      populateReceiptElement(billData);
-
-      const receiptElement = document.getElementById("receipt-print-history");
-      if (!receiptElement) {
-        console.error("Receipt element not found");
-        return generateDirectPDF(billData);
-      }
-
-      // Temporarily show the receipt element with proper positioning
-      receiptElement.classList.remove("hidden");
-      receiptElement.style.position = "absolute";
-      receiptElement.style.top = "0";
-      receiptElement.style.left = "0";
-      receiptElement.style.zIndex = "9999";
-      receiptElement.style.visibility = "visible";
-      receiptElement.style.backgroundColor = "white";
-      receiptElement.style.width = "220px";
-      receiptElement.style.height = "auto";
-      receiptElement.style.overflow = "visible";
-
-      // Force a reflow to ensure the element is properly rendered
-      receiptElement.offsetHeight;
-
-      // Wait for rendering and ensure content is visible
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      console.log("Receipt element dimensions:", {
-        offsetWidth: receiptElement.offsetWidth,
-        offsetHeight: receiptElement.offsetHeight,
-        scrollWidth: receiptElement.scrollWidth,
-        scrollHeight: receiptElement.scrollHeight,
-        clientWidth: receiptElement.clientWidth,
-        clientHeight: receiptElement.clientHeight,
-      });
-
-      // Check if content is actually visible
-      const contentCheck = receiptElement.innerHTML;
-      console.log("Receipt content length:", contentCheck.length);
-      console.log("Receipt content preview:", contentCheck.substring(0, 200));
-
-      const canvas = await html2canvas(receiptElement, {
-        width: 560, // 148mm = 560px at 96 DPI
-        height: receiptElement.scrollHeight,
-        scale: 1,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        allowTaint: true,
-        foreignObjectRendering: true,
-        logging: true,
-      });
-
-      // Hide the element again
-      receiptElement.classList.add("hidden");
-      receiptElement.style.position = "fixed";
-      receiptElement.style.zIndex = "-1";
-      receiptElement.style.visibility = "hidden";
-
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      console.log("Image data generated, length:", imgData.length);
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: [148, receiptElement.scrollHeight * 0.264583], // 148mm width
-      });
-
-      pdf.addImage(
-        imgData,
-        "PNG",
-        0,
-        0,
-        148,
-        receiptElement.scrollHeight * 0.264583
-      );
-      console.log("PDF created successfully");
-
-      return pdf;
-    } catch (error) {
-      // Make sure to hide the element even if there's an error
-      const receiptElement = document.getElementById("receipt-print-history");
-      if (receiptElement) {
-        receiptElement.classList.add("hidden");
-        receiptElement.style.position = "fixed";
-        receiptElement.style.zIndex = "-1";
-        receiptElement.style.visibility = "hidden";
-      }
-
-      console.error("Error generating PDF with html2canvas:", error);
-
-      // Fallback: Generate direct PDF
-      console.log("Falling back to direct PDF generation");
-      return generateDirectPDF(billData);
-    }
-  };
-
-  const generateSimplePDF = (billData) => {
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    // Set font
-    pdf.setFont("helvetica");
-
-    // Header
-    pdf.setFontSize(18);
-    pdf.text("KIRAN BEAUTY SHOP", 105, 20, { align: "center" });
-
-    pdf.setFontSize(12);
-    pdf.text("Beauty Products & Cosmetics", 105, 30, { align: "center" });
-
-    // Bill details
-    pdf.setFontSize(10);
-    pdf.text(`Bill No: #${billData.bill_no}`, 20, 50);
-    pdf.text(
-      `Date: ${new Date(billData.created_at).toLocaleDateString()}`,
-      20,
-      60
-    );
-    pdf.text(`Customer: ${billData.customer_name}`, 20, 70);
-
-    // Items
-    pdf.text("Items:", 20, 90);
-    let yPosition = 100;
-
-    billData.items.forEach((item, index) => {
-      pdf.text(`${item.product_name}`, 25, yPosition);
-      pdf.text(`Qty: ${item.quantity} × ₹${item.price}`, 25, yPosition + 5);
-      pdf.text(`Subtotal: ₹${item.subtotal.toFixed(2)}`, 25, yPosition + 10);
-      yPosition += 20;
-    });
-
-    // Total
-    pdf.setFontSize(12);
-    pdf.text(`TOTAL: ₹${billData.total_price.toFixed(2)}`, 20, yPosition + 10);
-
-    // Footer
-    pdf.setFontSize(10);
-    pdf.text("Thank you for shopping!", 105, yPosition + 25, {
-      align: "center",
-    });
-    pdf.text("Visit again", 105, yPosition + 32, { align: "center" });
-
-    return pdf;
-  };
-
-  const downloadPDF = async (billData) => {
-    try {
-      const pdf = await generatePDF(billData);
-      const pdfBlob = pdf.output("blob");
-
-      // Create a download link
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `bill_${billData.bill_no}_${
-        billData.customer_name || "customer"
-      }.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      alert("Error downloading PDF. Please try again.");
     }
   };
 
@@ -492,7 +277,7 @@ export default function HistoryPage() {
               
               th, td {
                 border: 1px solid black !important;
-                padding: 2mm !important;
+                padding: 2px !important;
                 text-align: left !important;
               }
               
@@ -584,12 +369,16 @@ export default function HistoryPage() {
             table {
               border-collapse: collapse;
               width: 100%;
-              font-size: 14px;
+              font-size: 13px;
+            }
+            
+            table th{
+             font-size: 14px;
             }
             
             th, td {
               border: 1px solid black;
-              padding: 2mm;
+              padding: 2px;
               text-align: left;
             }
             
@@ -662,24 +451,6 @@ export default function HistoryPage() {
       populateReceiptElement(printBillData);
       window.print();
     }
-  };
-
-  const downloadStoredPDF = (pdfUrl, billData) => {
-    if (!pdfUrl) {
-      alert("No PDF available for this bill. Please regenerate the PDF.");
-      return;
-    }
-
-    // Create a download link for the stored PDF
-    const link = document.createElement("a");
-    link.href = pdfUrl;
-    link.download = `bill_${billData.bill_no}_${
-      billData.customer_name || "customer"
-    }.pdf`;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const formatDate = (dateString) => {
@@ -1260,23 +1031,6 @@ export default function HistoryPage() {
                   </div>
 
                   <div className="flex space-x-3 pt-6 pb-2">
-                    {selectedBill.pdf_url ? (
-                      <button
-                        onClick={() =>
-                          downloadStoredPDF(selectedBill.pdf_url, selectedBill)
-                        }
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                      >
-                        Download Stored PDF
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => downloadPDF(selectedBill)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                      >
-                        Generate & Download PDF
-                      </button>
-                    )}
                     <button
                       onClick={() => printReceipt(selectedBill)}
                       className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
@@ -1437,102 +1191,194 @@ export default function HistoryPage() {
           </div>
         )}
 
-        {/* Hidden Receipt for Printing */}
         <div
           id="receipt-print-history"
           className="hidden fixed top-0 left-0 w-[148mm] h-[210mm] p-4 bg-white text-black z-[-1]"
         >
           <div className="w-[148mm] h-[210mm] p-4">
-            {/* Logo */}
+            {/* First line: Since 1992 + KHODALDHAM + Mo. */}
             <div
-              className="flex justify-center mb-2"
-              style={{ display: "flex", justifyContent: "center" }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingBottom: "10px",
+              }}
+            >
+              <span>Since 1992</span>
+              <span className="font-bold">KHODALDHAM</span>
+              <span>Mo.: 8000544966</span>
+            </div>
+
+            {/* Second line: Logo + Shop Name */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                paddingBottom: "5px",
+              }}
             >
               <img
                 src="apple-touch-icon.png"
-                height={60}
-                width={60}
+                height={50}
+                width={50}
                 alt="Logo"
+                className="mr-2"
               />
+              <span
+                className="font-bold text-2xl"
+                style={{
+                  paddingTop: "19px",
+                  marginLeft: "-8px",
+                  fontSize: "15px",
+                  fontWeight: "bold",
+                }}
+              >
+                iran Beauty Shop
+              </span>
             </div>
 
-            {/* Shop info */}
-            <h1 className="text-center font-bold text-2xl leading-tight mb-1">
-              Kiran Beauty Shop
-            </h1>
-            <p className="text-center text-sm leading-tight mb-1">Since 1992</p>
-            <p className="text-center text-base mb-4">
-              — Shine with Elegance —
-            </p>
-
-            <div className="text-sm mb-3">
-              {/* First row: Bill No + Mo */}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span className="font-semibold">
-                  Bill No: #<span id="receipt-bill-no">-</span>
+            {/* Third line: M/s (Customer) + Dt. (Date) */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingBottom: "5px",
+              }}
+            >
+              <span>
+                M/s:-{" "}
+                <span id="receipt-customer" className="font-semibold">
+                  -
                 </span>
-                <span className="text-right">Mo.: 8000544966</span>
-              </div>
+              </span>
+              <span>
+                Dt.:- <span id="receipt-date">-</span>
+              </span>
+            </div>
 
-              {/* Second row: Date */}
-              <div className="mt-1">
-                <span>
-                  Date: <span id="receipt-date">-</span>
+            {/* Fourth line: Bill No */}
+            <div className="text-sm mb-3" style={{ marginBottom: "3px" }}>
+              <span>
+                No.:-{" "}
+                <span id="receipt-bill-no" className="font-semibold">
+                  -
                 </span>
-              </div>
-
-              {/* Third row: Customer */}
-              <div className="mt-1">
-                <span className="font-semibold">
-                  Customer: <span id="receipt-customer">-</span>
-                </span>
-              </div>
+              </span>
             </div>
 
             {/* Items table */}
-            <table className="w-full text-sm border-collapse mb-4">
+            <table className="w-full text-sm mb-4">
               <thead>
-                <tr className="border-b-2 border-black">
-                  <th className="text-left py-2 px-2">Item</th>
-                  <th className="text-center py-2 px-2">Qty</th>
-                  <th className="text-right py-2 px-2">Price</th>
-                  <th className="text-right py-2 px-2">Subtotal</th>
+                <tr>
+                  <th className="text-left py-2 px-1">Sr.</th>
+                  <th className="text-left py-2 px-1">Item</th>
+                  <th className="text-center py-2 px-1">Qty</th>
+                  <th className="text-right py-2 px-1">Price</th>
+                  <th className="text-right py-2 px-1">Subtotal</th>
                 </tr>
               </thead>
               <tbody id="receipt-items">
                 {/* Items will be populated dynamically */}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-black">
-                  <td colSpan={3} className="text-right font-bold py-3 px-2">
+                <tr>
+                  <td className="py-3 px-1"></td>{" "}
+                  {/* Empty cell for Sr column */}
+                  <td
+                    colSpan={3}
+                    className="text-right font-bold py-3 px-1"
+                    style={{ fontWeight: "bold" }}
+                  >
                     Total
                   </td>
-                  <td className="text-right font-bold py-3 px-2">
+                  <td
+                    className="text-right font-bold py-3 px-1"
+                    style={{ fontWeight: "bold" }}
+                  >
                     ₹<span id="receipt-total">-</span>
                   </td>
                 </tr>
               </tfoot>
             </table>
 
-            {/* Fixed notes */}
-            <div className="text-sm text-center mb-6">
-              <p className="font-semibold mb-1">✨ Fixed Rate ✨</p>
-              <p className="mb-1">🚫 No Return</p>
-              <p className="mb-1">🚫 No Replacement</p>
+            {/* Fixed Rate, No Return, No Replacement */}
+            <div
+              className="text-sm text-center mb-4"
+              style={{
+                display: "flex",
+                justifyContent: "space-around",
+                paddingTop: "20px",
+              }}
+            >
+              <span className="font-semibold mb-1">✨ Fixed Rate ✨</span>
+              <span className="mb-1">🚫 No Return</span>
+              <span>🚫 No Replacement</span>
             </div>
 
-            {/* QR Code */}
-            <div className="flex justify-center mb-4">
-              {/* replace with your dynamic QR if needed */}
-              <img src="/qr.png" alt="UPI QR" className="w-32 h-32" />
-              {/* or mount a <canvas id="qrCanvas" /> here */}
+            <div
+              style={{
+                textAlign: "center",
+                marginBottom: "10px",
+                marginTop: "10px",
+              }}
+            >
+              <div style={{ fontSize: "11px", marginBottom: "5px" }}>
+                Scan to pay via UPI
+              </div>
+              <canvas
+                id="qrCanvas"
+                width="100"
+                height="100"
+                style={{
+                  border: "1px solid #ddd",
+                  display: "block",
+                  margin: "0 auto",
+                }}
+              ></canvas>
+              <div style={{ fontSize: "10px", marginTop: "5px" }}>
+                Payment ID: q458853545@ybl
+              </div>
             </div>
-
-            {/* Thank you */}
-            <p className="text-center text-sm font-semibold mb-1">
-              ✨ Thank you for shopping with us ✨
-            </p>
-            <p className="text-center text-sm">Visit Again 💖</p>
+            <div
+              className="text-xs"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingTop: "15px",
+                marginTop: "15px",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "10px" /* thoda upar margin de */,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  fontSize: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span style={{ marginRight: "4px" }}>📍</span>
+                  <span>3, Gundawadi, Rajkot - 360002</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span style={{ marginRight: "4px" }}>
+                    <img
+                      src="instagram.png"
+                      alt="Instagram"
+                      width="20"
+                      height="20"
+                      style={{ paddingTop: "5px" }}
+                    />
+                  </span>
+                  <span>kiran_beauty_rajkot</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
