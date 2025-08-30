@@ -10,7 +10,7 @@ export default function ReceiptQR({ bill }) {
         2
       )}&cu=INR`;
 
-      QRCode.toDataURL(upiUrl, { width: 100, margin: 1 })
+      QRCode.toDataURL(upiUrl, { width: 70, margin: 1 })
         .then((url) => {
           setQrSrc(url);
         })

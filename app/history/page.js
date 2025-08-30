@@ -197,7 +197,7 @@ export default function HistoryPage() {
         QRCode.toDataURL(
           upiUrl,
           {
-            width: 100,
+            width: 80,
             margin: 1,
             color: { dark: "#000000", light: "#FFFFFF" },
           },
@@ -210,8 +210,8 @@ export default function HistoryPage() {
               if (qrContainer) {
                 const img = document.createElement("img");
                 img.src = url;
-                img.width = 100;
-                img.height = 100;
+                img.width = 80;
+                img.height = 80;
                 qrContainer.replaceWith(img);
               }
             }
@@ -1206,7 +1206,7 @@ export default function HistoryPage() {
             >
               <span>Since 1992</span>
               <span className="font-bold">KHODALDHAM</span>
-              <span>Mo.: 8000544966</span>
+              <span>Mo.: 8347134004</span>
             </div>
 
             {/* Second line: Logo + Shop Name */}
@@ -1246,7 +1246,7 @@ export default function HistoryPage() {
               }}
             >
               <span>
-                M/s:-{" "}
+                Name:-{" "}
                 <span id="receipt-customer" className="font-semibold">
                   -
                 </span>
@@ -1327,8 +1327,8 @@ export default function HistoryPage() {
               </div>
               <canvas
                 id="qrCanvas"
-                width="100"
-                height="100"
+                width="70"
+                height="70"
                 style={{
                   border: "1px solid #ddd",
                   display: "block",

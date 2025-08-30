@@ -1439,7 +1439,7 @@ export default function HomePage() {
                 {" "}
                 <span>Since 1992</span>{" "}
                 <span className="font-bold">KHODALDHAM</span>{" "}
-                <span>Mo.: 8000544966</span>{" "}
+                <span>Mo.: 8347134004</span>{" "}
               </div>
               {/* Second line: Logo + Shop Name */}
               <div
@@ -1477,7 +1477,7 @@ export default function HomePage() {
                 }}
               >
                 <span>
-                  M/s:-{" "}
+                  Name:-{" "}
                   <span className="font-semibold">
                     {currentBill.customer_name}
                   </span>
