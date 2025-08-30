@@ -157,16 +157,16 @@ export default function HistoryPage() {
       const totalElement = document.getElementById("receipt-total");
       const itemsElement = document.getElementById("receipt-items");
 
-      if (billNoElement) billNoElement.textContent = billData.bill_no;
-      if (dateElement)
-        dateElement.textContent = new Date(
-          billData.created_at
-        ).toLocaleDateString("en-IN");
-      if (customerElement)
-        customerElement.textContent =
-          billData.customer_name || "No Customer Name";
-      if (totalElement)
-        totalElement.textContent = billData.total_price.toFixed(2);
+    if (billNoElement) billNoElement.textContent = billData.bill_no;
+    if (dateElement)
+      dateElement.textContent = new Date(
+        billData.created_at
+      ).toLocaleDateString("en-IN");
+    if (customerElement)
+      customerElement.textContent =
+        billData.customer_name || "No Customer Name";
+    if (totalElement)
+      totalElement.textContent = billData.total_price.toFixed(2);
 
       // Populate items with proper styling
       if (itemsElement) {
