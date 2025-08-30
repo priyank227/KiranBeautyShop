@@ -1042,9 +1042,8 @@ export default function HomePage() {
                     type="number"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    min="1"
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onChange={(e) => setQuantity(parseInt(e.target.value))}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                   />
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
@@ -1439,8 +1438,8 @@ export default function HomePage() {
 
         {/* Product Selection Modal */}
         {showProductModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-lg h-[85vh] overflow-y-auto shadow-2xl mt-10">
               <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900">
