@@ -197,7 +197,7 @@ export default function HistoryPage() {
         QRCode.toDataURL(
           upiUrl,
           {
-            width: 80,
+            width: 70,
             margin: 1,
             color: { dark: "#000000", light: "#FFFFFF" },
           },
@@ -210,8 +210,8 @@ export default function HistoryPage() {
               if (qrContainer) {
                 const img = document.createElement("img");
                 img.src = url;
-                img.width = 80;
-                img.height = 80;
+                img.width = 70;
+                img.height = 70;
                 qrContainer.replaceWith(img);
               }
             }
